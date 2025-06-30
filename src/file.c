@@ -17,6 +17,7 @@ int readData(char* file, void* buf, int pos, int bytesToRead){
 
     int bytesRead = read(fd,buf,bytesToRead);
     if (bytesRead != bytesToRead) {
+        printf("WARNING: read %d / %d\n",bytesRead,bytesToRead);
         perror("error reading data");
         return 0;
     }

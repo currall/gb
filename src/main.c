@@ -1,8 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "config.h"
 #include "file.h"
 #include "header.h"
+#include "memory.h"
+#include "rom.h"
 
 // registers
 uint16_t AF;
@@ -20,8 +23,11 @@ int main(int argc, char *argv[]){
     else
         file = "test.gb";
     
+    uint8_t memory[64*1024];
+
     Header h = readHeader(file);
-    printHeader(h);
+    if (PRINT_ROM_HEADER == TRUE) printHeader(h);
+    readROM(file,h,memory);
 
     return 0;
 }

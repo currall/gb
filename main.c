@@ -1,42 +1,27 @@
-#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "file.h"
 #include "header.h"
 
-int readData(char* file, void* buf, int pos, int bytesToRead){
-    int fd = open(file, O_RDONLY);
-    if (fd < 0){
-        perror("invalid file descriptor");
-        return 0;
-    }
+// registers
+uint16_t AF;
+uint16_t BC;
+uint16_t DE;
+uint16_t HL;
+uint16_t SP;
+uint16_t PC;
 
-    if ((lseek(fd,pos,SEEK_SET)) == -1){
-        perror("error seeking in file");
-        return 0;
-    }
+int main(int argc, char *argv[]){
 
-    int bytesRead = read(fd,buf,bytesToRead);
-    if (bytesRead != bytesToRead) {
-        perror("error reading data");
-        return 0;
-    }
-
-    close(fd);
-    return 1;
-}
-
-Header readHeader(char* file){
-    Header h;
-    readData(file, &h, 0, sizeof(Header));
-    return h;
-}
-
-int main(){
-    char* file = "test.gb";
+    char* file;
+    if (argc>1) // read rom from arg
+        file = argv[1];
+    else
+        file = "test.gb";
+    
     Header h = readHeader(file);
-
-    printf("%s",h.ROMName);
+    printHeader(h);
 
     return 0;
 }

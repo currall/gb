@@ -1,3 +1,7 @@
+// header.h
+#ifndef HEADER_H
+#define HEADER_H
+
 #include <stdint.h>
 
 typedef struct {
@@ -12,3 +16,8 @@ typedef struct {
     uint8_t     Licensee;
 
 } Header;
+
+Header readHeader(char* file);
+void printHeader(Header h);
+
+#endif

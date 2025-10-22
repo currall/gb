@@ -6,5 +6,6 @@
 #define FALSE 0
 
 #define PRINT_ROM_HEADER TRUE
+#define PRINT_MEMORY FALSE
 
 #endif

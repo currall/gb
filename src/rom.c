@@ -9,8 +9,15 @@
 
 void readROM(char* file, Header h, uint8_t* m){
     uint16_t ROMSizeB = 32 * 1024 * (1 << h.ROMSize); // rom size in bytes
-    if (h.ROMSize == 0){
-        readData(file, m, 0, ROMSizeB);
-    }
-    printf("%d",m);
+	uint16_t MemROMSize = 32 * 1024; // 32kb
+	
+    readData(file, m, 0, MemROMSize); // read ROM data into RAM
+}
+
+void printROM(uint8_t* m) {
+	uint16_t MemROMSize = 32 * 1024; // 32kb
+	
+	for (int i=0; i< MemROMSize; i++){
+		printf("%x ",m[i]);
+	}
 }

@@ -6,6 +6,7 @@
 #include "header.h"
 #include "memory.h"
 #include "rom.h"
+#include "screen.h"
 
 // registers
 uint16_t AF;
@@ -28,6 +29,20 @@ int main(int argc, char *argv[]){
     Header h = readHeader(file);
     if (PRINT_ROM_HEADER == TRUE) printHeader(h);
     readROM(file,h,memory);
+	if (PRINT_MEMORY == TRUE) printROM(memory);
+	
+	Window w;
+
+    if (createWindow(&w, "gb", 800, 600) != 0)
+        return 1;
+
+    int running = 1;
+    while (running) {
+        running = handleWindowEvents();
+        drawWindow(&w);
+    }
+	
+	closeWindow(&w);
 
     return 0;
 }

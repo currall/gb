@@ -2,6 +2,7 @@
 #ifndef CPU_H
 #define CPU_H
 
+#include "registers.h"
 #include "rom.h"
 
 /* 
@@ -29,8 +30,8 @@ int operand_lengths[256] = {
 	0, 0, 2, 9, 2, 0, 1, 0, 0, 0, 2, 9, 2, 9, 1, 0, // 0xDx
 	1, 0, 1, 9, 9, 0, 1, 0, 1, 0, 2, 9, 9, 9, 1, 0, // 0xEx
 	1, 0, 1, 0, 9, 0, 1, 0, 1, 0, 2, 0, 9, 9, 1, 0  // 0xFx
-}
+};
 
-void cycle(uint8_t* m, int pos);
+void cycle(uint8_t* m, Registers reg);
 
 #endif

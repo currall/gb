@@ -6,21 +6,12 @@
 #include "file.h"
 #include "header.h"
 #include "memory.h"
+#include "registers.h"
 #include "rom.h"
 
-// registers
-uint8_t A;
-uint8_t F;
-uint8_t B;
-uint8_t C;
-uint8_t D;
-uint8_t E;
-uint8_t H;
-uint8_t L;
-uint16_t SP;
-uint16_t PC = 0x0000;
-
 int main(int argc, char *argv[]){
+	
+	Registers reg;
 
     char* file;
     if (argc>1) // read rom from arg
@@ -35,12 +26,12 @@ int main(int argc, char *argv[]){
     readROM(file,h,memory);
 	if (PRINT_MEMORY == TRUE) printROM(memory);
 	
-	cycle(memory,PC);
+	cycle(memory,reg);
+	
+	int cycles = 0;
 	
 	while(true){ // main loop
-	
-		int x = 0; 
-	
+		cycles++;
 	}
 
     return 0;

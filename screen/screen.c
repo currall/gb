@@ -9,7 +9,7 @@ int main(int argc, char *argv[]) {
     window = SDL_CreateWindow("gb", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 160, 144, 0);
 	renderer = SDL_CreateRenderer(window, 0, SDL_RENDERER_ACCELERATED);
 	
-    if (!w) { SDL_Quit(); return 1; }
+    if (!window) { SDL_Quit(); return 1; }
 
     SDL_Event e;
     int running = 1;
@@ -20,13 +20,12 @@ int main(int argc, char *argv[]) {
 				running = 0;
 			
 		// draw
-		SDL_Rect rect = 
 			
 		// clock
         SDL_Delay(10);
     }
 
-    SDL_DestroyWindow(w);
+    SDL_DestroyWindow(window);
     SDL_Quit();
     return 0;
 }

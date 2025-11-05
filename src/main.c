@@ -2,19 +2,23 @@
 #include <stdlib.h>
 
 #include "config.h"
+#include "cpu.h"
 #include "file.h"
 #include "header.h"
 #include "memory.h"
 #include "rom.h"
-#include "screen.h"
 
 // registers
-uint16_t AF;
-uint16_t BC;
-uint16_t DE;
-uint16_t HL;
+uint8_t A;
+uint8_t F;
+uint8_t B;
+uint8_t C;
+uint8_t D;
+uint8_t E;
+uint8_t H;
+uint8_t L;
 uint16_t SP;
-uint16_t PC;
+uint16_t PC = 0x0000;
 
 int main(int argc, char *argv[]){
 
@@ -31,18 +35,13 @@ int main(int argc, char *argv[]){
     readROM(file,h,memory);
 	if (PRINT_MEMORY == TRUE) printROM(memory);
 	
-	Window w;
-
-    if (createWindow(&w, "gb", 800, 600) != 0)
-        return 1;
-
-    int running = 1;
-    while (running) {
-        running = handleWindowEvents();
-        drawWindow(&w);
-    }
+	cycle(memory,PC);
 	
-	closeWindow(&w);
+	while(true){ // main loop
+	
+		int x = 0; 
+	
+	}
 
     return 0;
 }

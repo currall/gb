@@ -14,6 +14,7 @@ number of bytes following the opcode to be used as operands
 9: invalid instruction (should never be used)
 */
 int operand_lengths[256] = {
+//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 	0, 2, 0, 0, 0, 0, 1, 0, 2, 0, 0, 0, 0, 0, 1, 0, // 0x0x
 	1, 2, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, // 0x1x
 	1, 2, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, // 0x2x
@@ -32,6 +33,6 @@ int operand_lengths[256] = {
 	1, 0, 1, 0, 9, 0, 1, 0, 1, 0, 2, 0, 9, 9, 1, 0  // 0xFx
 };
 
-void cycle(uint8_t* m, Registers reg);
+void cycle(uint8_t* m, Registers* reg);
 
 #endif

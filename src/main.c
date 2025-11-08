@@ -26,7 +26,11 @@ int main(int argc, char *argv[]){
     readROM(file,h,memory);
 	if (PRINT_MEMORY == TRUE) printROM(memory);
 	
-	cycle(memory,reg);
+	reg.A = 1;
+	reg.B = 2;
+	printf("1. A = %d, B = %d\n",reg.A,reg.B);
+	cycle(memory,&reg);
+	printf("4. A = %d, B = %d\n",reg.A,reg.B);
 	
 	int cycles = 0;
 	

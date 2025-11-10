@@ -26,15 +26,16 @@ int main(int argc, char *argv[]){
     readROM(file,h,memory);
 	if (PRINT_MEMORY == TRUE) printROM(memory);
 	
-	reg.A = 1;
-	reg.B = 2;
-	printf("1. A = %d, B = %d\n",reg.A,reg.B);
-	cycle(memory,&reg);
-	printf("4. A = %d, B = %d\n",reg.A,reg.B);
+	reg.H = 0;
+	reg.L = 0;
 	
 	int cycles = 0;
 	
-	while(true){ // main loop
+	for (int i=0;i<10;i++){ // debug first 10 instructions
+	//while(true){ // main loop
+	
+		cycle(memory,&reg);
+		printf("SP: 0x%x\n",reg.SP);
 		cycles++;
 	}
 

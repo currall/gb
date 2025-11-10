@@ -4,9 +4,36 @@
 #include "registers.h"
 #include "rom.h"
 
-void ld(uint8_t* a, uint8_t* b) {
-	
+void setflags(Registers* reg) { ;
 }
+
+/* 
+-- operand lengths --
+number of bytes following the opcode to be used as operands
+0: opcode + operands = 1 byte
+1: opcode + operands = 2 bytes (8-bit  operand)
+2: opcode + operands = 3 bytes (16-bit operand)
+9: invalid instruction (should never be used)
+*/
+int operand_lengths[256] = {
+//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+	0, 2, 0, 0, 0, 0, 1, 0, 2, 0, 0, 0, 0, 0, 1, 0, // 0x0x
+	1, 2, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, // 0x1x
+	1, 2, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, // 0x2x
+	1, 2, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, // 0x3x
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x4x
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x5x
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x6x
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x7x
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x8x
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x9x
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0xAx
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0xBx
+	0, 0, 2, 2, 2, 0, 1, 0, 0, 0, 2, 0, 2, 2, 1, 0, // 0xCx
+	0, 0, 2, 9, 2, 0, 1, 0, 0, 0, 2, 9, 2, 9, 1, 0, // 0xDx
+	1, 0, 1, 9, 9, 0, 1, 0, 1, 0, 2, 9, 9, 9, 1, 0, // 0xEx
+	1, 0, 1, 0, 9, 0, 1, 0, 1, 0, 2, 0, 9, 9, 1, 0  // 0xFx
+};
 
 /*
 information on opcodes found at: https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html
@@ -20,9 +47,9 @@ information on opcodes found at: https://www.pastraiser.com/cpu/gameboy/gameboy_
 // 0x00
 void nop(Registers* reg) {;}
 // 0x01
-void ld_bc_xx(Registers* reg) {;}
+void ld_bc_xx(Registers* reg, uint16_t operand) {reg->BC = operand;}
 // 0x02
-void ld_bcp_a(Registers* reg) {;}
+void ld_bcp_a(Registers* reg, uint8_t* m) {reg->A = m[reg->BC];}
 // 0x03
 void inc_bc(Registers* reg) {;}
 // 0x04
@@ -30,7 +57,7 @@ void inc_b(Registers* reg) {;}
 // 0x05
 void dec_b(Registers* reg) {;}
 // 0x06
-void ld_b_x(Registers* reg) {;}
+void ld_b_x(Registers* reg, uint8_t operand) {reg->B = operand;}
 // 0x07
 void rlca(Registers* reg) {;}
 // 0x08
@@ -38,15 +65,15 @@ void ld_xxp_sp(Registers* reg) {;}
 // 0x09
 void add_hl_bc(Registers* reg) {;}
 // 0x0A
-void ld_a_bcp(Registers* reg) {;}
+void ld_a_bcp(Registers* reg, uint8_t* m) {reg->A = m[reg->BC];}
 // 0x0B
-void dec_bc(Registers* reg) {;}
+void dec_bc(Registers* reg) {reg->BC--;}
 // 0x0C
 void inc_c(Registers* reg) {;}
 // 0x0D
 void dec_c(Registers* reg) {;}
 // 0x0E
-void ld_c_x(Registers* reg) {;}
+void ld_c_x(Registers* reg, uint8_t operand) {reg->C = operand;}
 // 0x0F
 void rrca(Registers* reg) {;}
 
@@ -55,17 +82,17 @@ void rrca(Registers* reg) {;}
 // 0x10
 void stop(Registers* reg) {;}
 // 0x11
-void ld_de_xx(Registers* reg) {;}
+void ld_de_xx(Registers* reg, uint16_t operand) {reg->DE = operand;}
 // 0x12
 void ld_dep_a(Registers* reg) {;}
 // 0x13
-void inc_de(Registers* reg) {;}
+void inc_de(Registers* reg) {reg->DE++;}
 // 0x14
 void inc_d(Registers* reg) {;}
 // 0x15
 void dec_d(Registers* reg) {;}
 // 0x16
-void ld_d_x(Registers* reg) {;}
+void ld_d_x(Registers* reg, uint8_t operand) {reg->D = operand;}
 // 0x17
 void rla(Registers* reg) {;}
 // 0x18
@@ -73,15 +100,15 @@ void jr_x(Registers* reg) {;}
 // 0x19
 void add_hl_de(Registers* reg) {;}
 // 0x1A
-void ld_a_dep(Registers* reg) {;}
+void ld_a_dep(Registers* reg, uint8_t* m) {reg->A = m[reg->DE];}
 // 0x1B
-void dec_de(Registers* reg) {;}
+void dec_de(Registers* reg) {reg->DE--;}
 // 0x1C
 void inc_e(Registers* reg) {;}
 // 0x1D
 void dec_e(Registers* reg) {;}
 // 0x1E
-void ld_e_x(Registers* reg) {;}
+void ld_e_x(Registers* reg, uint8_t operand) {reg->E = operand;}
 // 0x1F
 void rra(Registers* reg) {;}
 
@@ -90,9 +117,9 @@ void rra(Registers* reg) {;}
 // 0x20
 void jr_nz_x(Registers* reg) {;}
 // 0x21
-void ld_hl_xx(Registers* reg) {;}
+void ld_hl_xx(Registers* reg,uint16_t operand) {reg->HL = operand;}
 // 0x22
-void ldi_hlp_a(Registers* reg) {;}
+void ldi_hlp_a(Registers* reg, uint8_t* m) {m[reg->HL] = reg->A; reg->HL++;}
 // 0x23
 void inc_hl(Registers* reg) {;}
 // 0x24
@@ -100,7 +127,7 @@ void inc_h(Registers* reg) {;}
 // 0x25
 void dec_h(Registers* reg) {;}
 // 0x26
-void ld_h_x(Registers* reg) {;}
+void ld_h_x(Registers* reg, uint8_t operand) {reg->H = operand;}
 // 0x27
 void daa(Registers* reg) {;}
 // 0x28
@@ -108,15 +135,15 @@ void jr_z_x(Registers* reg) {;}
 // 0x29
 void add_hl_hl(Registers* reg) {;}
 // 0x2A
-void ldi_a_hlp(Registers* reg) {;}
+void ldi_a_hlp(Registers* reg, uint8_t* m) {reg->A = m[reg->HL]; reg->HL++;}
 // 0x2B
-void dec_hl(Registers* reg) {;}
+void dec_hl(Registers* reg) {reg->HL--;}
 // 0x2C
 void inc_l(Registers* reg) {;}
 // 0x2D
 void dec_l(Registers* reg) {;}
 // 0x2E
-void ld_l_x(Registers* reg) {;}
+void ld_l_x(Registers* reg, uint8_t operand) {reg->L = operand;}
 // 0x2F
 void cpl(Registers* reg) {;}
 
@@ -125,9 +152,9 @@ void cpl(Registers* reg) {;}
 // 0x30
 void jp_nc_x(Registers* reg) {;}
 // 0x31
-void ld_sp_xx(Registers* reg) {printf("\nran instruction 0x31\n");}
+void ld_sp_xx(Registers* reg, uint16_t operand) {reg->SP = operand;}
 // 0x32
-void ldd_hlp_a(Registers* reg) {;}
+void ldd_hlp_a(Registers* reg, uint8_t* m) {m[reg->HL] = reg->A; reg->HL--;}
 // 0x33
 void inc_sp(Registers* reg) {;}
 // 0x34
@@ -135,7 +162,7 @@ void inc_hlp(Registers* reg) {;}
 // 0x35
 void dec_hlp(Registers* reg) {;}
 // 0x36
-void ld_hlp_x(Registers* reg) {;}
+void ld_hlp_x(Registers* reg, uint8_t* m, uint8_t operand) {m[reg->HL] = operand;}
 // 0x37
 void scf(Registers* reg) {;}
 // 0x38
@@ -143,7 +170,7 @@ void jr_c_x(Registers* reg) {;}
 // 0x39
 void add_hl_sp(Registers* reg) {;}
 // 0x3A
-void ldd_a_hlp(Registers* reg) {;}
+void ldd_a_hlp(Registers* reg, uint8_t* m) {reg->A = m[reg->HL]; reg->HL--;}
 // 0x3B
 void dec_sp(Registers* reg) {;}
 // 0x3C
@@ -151,7 +178,7 @@ void inc_a(Registers* reg) {;}
 // 0x3D
 void dec_a(Registers* reg) {;}
 // 0x3E
-void ld_a_x(Registers* reg) {;}
+void ld_a_x(Registers* reg, uint8_t operand) {reg->A = operand;}
 // 0x3F
 void ccf(Registers* reg) {;}
 
@@ -170,7 +197,7 @@ void ld_b_h(Registers* reg) {reg->B = reg->H;}
 // 0x45
 void ld_b_l(Registers* reg) {reg->B = reg->L;}
 // 0x46
-void ld_b_hlp(Registers* reg) {;}
+void ld_b_hlp(uint8_t* m, Registers* reg) {reg->B = m[reg->HL];}
 // 0x47
 void ld_b_a(Registers* reg) {reg->B = reg->A;}
 // 0x48
@@ -186,7 +213,7 @@ void ld_c_h(Registers* reg) {reg->C = reg->H;}
 // 0x4D
 void ld_c_l(Registers* reg) {reg->C = reg->L;}
 // 0x4E
-void ld_c_hlp(Registers* reg) {;}
+void ld_c_hlp(uint8_t* m, Registers* reg) {reg->C = m[reg->HL];}
 // 0x4F
 void ld_c_a(Registers* reg) {reg->C = reg->A;}
 
@@ -205,7 +232,7 @@ void ld_d_h(Registers* reg) {reg->D = reg->H;}
 // 0x55
 void ld_d_l(Registers* reg) {reg->D = reg->L;}
 // 0x56
-void ld_d_hlp(Registers* reg) {;}
+void ld_d_hlp(uint8_t* m, Registers* reg) {reg->D = m[reg->HL];}
 // 0x57
 void ld_d_a(Registers* reg) {reg->D = reg->A;}
 // 0x58
@@ -221,7 +248,7 @@ void ld_e_h(Registers* reg) {reg->E = reg->H;}
 // 0x5D
 void ld_e_l(Registers* reg) {reg->E = reg->L;}
 // 0x5E
-void ld_e_hlp(Registers* reg) {;}
+void ld_e_hlp(uint8_t* m, Registers* reg) {reg->E = m[reg->HL];}
 // 0x5F
 void ld_e_a(Registers* reg) {reg->E = reg->A;}
 
@@ -240,7 +267,7 @@ void ld_h_h(Registers* reg) {reg->H = reg->H;}
 // 0x65
 void ld_h_l(Registers* reg) {reg->H = reg->L;}
 // 0x66
-void ld_h_hlp(Registers* reg) {;}
+void ld_h_hlp(uint8_t* m, Registers* reg) {reg->H = m[reg->HL];}
 // 0x67
 void ld_h_a(Registers* reg) {reg->H = reg->A;}
 // 0x68
@@ -256,28 +283,28 @@ void ld_l_h(Registers* reg) {reg->L = reg->H;}
 // 0x6D
 void ld_l_l(Registers* reg) {reg->L = reg->L;}
 // 0x6E
-void ld_l_hlp(Registers* reg) {;}
+void ld_l_hlp(uint8_t* m, Registers* reg) {reg->L = m[reg->HL];}
 // 0x6F
 void ld_l_a(Registers* reg) {reg->L = reg->A;}
 
 // --- 0x7x ---
 
 // 0x70
-void ld_hlp_b(Registers* reg) {;}
+void ld_hlp_b(uint8_t* m, Registers* reg) {m[reg->HL] = reg->B;}
 // 0x71
-void ld_hlp_c(Registers* reg) {;}
+void ld_hlp_c(uint8_t* m, Registers* reg) {m[reg->HL] = reg->C;}
 // 0x72
-void ld_hlp_d(Registers* reg) {;}
+void ld_hlp_d(uint8_t* m, Registers* reg) {m[reg->HL] = reg->D;}
 // 0x73
-void ld_hlp_e(Registers* reg) {;}
+void ld_hlp_e(uint8_t* m, Registers* reg) {m[reg->HL] = reg->E;}
 // 0x74
-void ld_hlp_h(Registers* reg) {;}
+void ld_hlp_h(uint8_t* m, Registers* reg) {m[reg->HL] = reg->H;}
 // 0x75
-void ld_hlp_l(Registers* reg) {;}
+void ld_hlp_l(uint8_t* m, Registers* reg) {m[reg->HL] = reg->L;}
 // 0x76
 void halt(Registers* reg) {;}
 // 0x77
-void ld_hlp_a(Registers* reg) {;}
+void ld_hlp_a(uint8_t* m, Registers* reg) {m[reg->HL] = reg->A;}
 // 0x78
 void ld_a_b(Registers* reg) {reg->A = reg->B;}
 // 0x79
@@ -291,7 +318,7 @@ void ld_a_h(Registers* reg) {reg->A = reg->H;}
 // 0x7D
 void ld_a_l(Registers* reg) {reg->A = reg->L;}
 // 0x7E
-void ld_a_hlp(Registers* reg) {;}
+void ld_a_hlp(uint8_t* m, Registers* reg) {reg->A = m[reg->HL];}
 // 0x7F
 void ld_a_a(Registers* reg) {reg->A = reg->A;}
 
@@ -502,11 +529,11 @@ void rst_18(Registers* reg) {;}
 // --- 0xEx ---
 
 // 0xE0
-void ldh_x_a(Registers* reg) {;}
+void ldh_x_a(Registers* reg, uint8_t* m, uint8_t operand) {m[0xFF00 + operand] = reg->A;}
 // 0xE1
 void pop_hl(Registers* reg) {;}
 // 0xE2
-void ld_cp_a(Registers* reg) {;}
+void ld_cp_a(Registers* reg, uint8_t* m) {m[0xFF00 + reg->C] = reg->A;}
 // 0xE5
 void push_hl(Registers* reg) {;}
 // 0xE6
@@ -527,11 +554,11 @@ void rst_28(Registers* reg) {;}
 // --- 0xFx ---
 
 // 0xF0
-void ldh_a_xp(Registers* reg) {;}
+void ldh_a_xp(Registers* reg, uint8_t* m, uint8_t operand) {reg->A = m[0xFF00 + operand];}
 // 0xF1
 void pop_af(Registers* reg) {;}
 // 0xF2
-void ld_a_cp(Registers* reg) {;}
+void ld_a_cp(Registers* reg, uint8_t* m) {reg->A = m[0xFF00 + reg->C];}
 // 0xF3
 void di(Registers* reg) {;}
 // 0xF5
@@ -543,9 +570,9 @@ void rst_30(Registers* reg) {;}
 // 0xF8
 void ld_hl_sp_x(Registers* reg) {;}
 // 0xF9
-void ld_sp_hl(Registers* reg) {;}
+void ld_sp_hl(Registers* reg) {reg->SP = reg->HL;}
 // 0xFA
-void ld_a_xp(Registers* reg) {;}
+void ld_a_xp(Registers* reg, uint8_t* m, uint16_t operand) {reg->A = m[operand];}
 // 0xFB
 void ei(Registers* reg) {;}
 // 0xFE
@@ -553,87 +580,97 @@ void cp_x(Registers* reg) {;}
 // 0xFF
 void rst_38(Registers* reg) {;}
 
+
 void cycle(uint8_t* m, Registers* reg){
 
 	uint8_t instruction = m[reg->PC];
-	printf("\n%x\n",instruction);
-	printf("2. A = %d, B = %d\n",reg->A,reg->B);
-	reg->A = reg->B;
-	printf("3. A = %d, B = %d\n",reg->A,reg->B);
+	uint8_t operand_x = m[reg->PC + 1];
+	uint16_t operand_xx = m[reg->PC + 1] + (m[reg->PC + 2] << 8);
+	
+	printf("instruction: 0x%x\n",instruction);
+	printf("operand: 0x%x\n",operand_xx);
+	printf("SP: 0x%x\n",reg->SP);
 	
 	/*
 	x: 1 byte parameter
 	xx: 2 byte parameter
 	*p: (p)
+	
+	ldd: ld then decrement
+	ldi: ld then increment
+	
+	z
+	nc: carry flag is 0
+	c: carry flag is 1
 	*/
 	
 	switch (instruction) {
 		case (0x00):nop(reg); break; // 0x00
-		case (0x01):ld_bc_xx(reg); break; // 0x01
-		case (0x02):ld_bcp_a(reg); break; // 0x02
+		case (0x01):ld_bc_xx(reg, operand_xx); break; // 0x01
+		case (0x02):ld_bcp_a(reg, m); break; // 0x02
 		case (0x03):inc_bc(reg); break; // 0x03
 		case (0x04):inc_b(reg); break; // 0x04
 		case (0x05):dec_b(reg); break; // 0x05
-		case (0x06):ld_b_x(reg); break; // 0x06
+		case (0x06):ld_b_x(reg, operand_x); break; // 0x06
 		case (0x07):rlca(reg); break; // 0x07
 		case (0x08):ld_xxp_sp(reg); break; // 0x08
 		case (0x09):add_hl_bc(reg); break; // 0x09
-		case (0x0A):ld_a_bcp(reg); break; // 0x0A
+		case (0x0A):ld_a_bcp(reg, m); break; // 0x0A
 		case (0x0B):dec_bc(reg); break; // 0x0B
 		case (0x0C):inc_c(reg); break; // 0x0C
 		case (0x0D):dec_c(reg); break; // 0x0D
-		case (0x0E):ld_c_x(reg); break; // 0x0E
+		case (0x0E):ld_c_x(reg, operand_x); break; // 0x0E
 		case (0x0F):rrca(reg); break; // 0x0F
 		
 		case (0x10):stop(reg); break; // 0x10
-		case (0x11):ld_de_xx(reg); break; // 0x11
+		case (0x11):ld_de_xx(reg, operand_xx); break; // 0x11
 		case (0x12):ld_dep_a(reg); break; // 0x12
 		case (0x13):inc_de(reg); break; // 0x13
 		case (0x14):inc_d(reg); break; // 0x14
 		case (0x15):dec_d(reg); break; // 0x15
-		case (0x16):ld_d_x(reg); break; // 0x16
+		case (0x16):ld_d_x(reg, operand_x); break; // 0x16
 		case (0x17):rla(reg); break; // 0x17
 		case (0x18):jr_x(reg); break; // 0x18
 		case (0x19):add_hl_de(reg); break; // 0x19
-		case (0x1A):ld_a_dep(reg); break; // 0x1A
+		case (0x1A):ld_a_dep(reg,m); break; // 0x1A
 		case (0x1B):dec_de(reg); break; // 0x1B
 		case (0x1C):inc_e(reg); break; // 0x1C
 		case (0x1D):dec_e(reg); break; // 0x1D
-		case (0x1E):ld_e_x(reg); break; // 0x1E
+		case (0x1E):ld_e_x(reg, operand_x); break; // 0x1E
 		case (0x1F):rra(reg); break; // 0x1F
 		
 		case (0x20):jr_nz_x(reg); break; // 0x20
-		case (0x21):ld_hl_xx(reg); break; // 0x21
-		case (0x22):ldi_hlp_a(reg); break; // 0x22
+		case (0x21):ld_hl_xx(reg, operand_xx); break; // 0x21
+		case (0x22):ldi_hlp_a(reg, m); break; // 0x22
 		case (0x23):inc_hl(reg); break; // 0x23
 		case (0x24):inc_h(reg); break; // 0x24
 		case (0x25):dec_h(reg); break; // 0x25
-		case (0x26):ld_h_x(reg); break; // 0x26
+		case (0x26):ld_h_x(reg, operand_x); break; // 0x26
 		case (0x27):daa(reg); break; // 0x27
 		case (0x28):jr_z_x(reg); break; // 0x28
 		case (0x29):add_hl_hl(reg); break; // 0x29
-		case (0x2A):ldi_a_hlp(reg); break; // 0x2A
+		case (0x2A):ldi_a_hlp(reg, m); break; // 0x2A
 		case (0x2B):dec_hl(reg); break; // 0x2B
 		case (0x2C):inc_l(reg); break; // 0x2C
 		case (0x2D):dec_l(reg); break; // 0x2D
-		case (0x2E):ld_l_x(reg); break; // 0x2E
+		case (0x2E):ld_l_x(reg, operand_x); break; // 0x2E
 		case (0x2F):cpl(reg); break; // 0x2F
 		
 		case (0x30):jp_nc_x(reg); break; // 0x30
-		case (0x31):ld_sp_xx(reg); break; // 0x31
-		case (0x32):ldd_hlp_a(reg); break; // 0x32
+		case (0x31):ld_sp_xx(reg, operand_xx); break; // 0x31
+		case (0x32):ldd_hlp_a(reg, m); break; // 0x32
 		case (0x33):inc_sp(reg); break; // 0x33
 		case (0x34):inc_hlp(reg); break; // 0x34
 		case (0x35):dec_hlp(reg); break; // 0x35
-		case (0x36):ld_hlp_x(reg); break; // 0x36
+		case (0x36):ld_hlp_x(reg, m, operand_x); break; // 0x36
 		case (0x37):scf(reg); break; // 0x37
 		case (0x38):jr_c_x(reg); break; // 0x38
 		case (0x39):add_hl_sp(reg); break; // 0x39
-		case (0x3A):ldd_a_hlp(reg); break; // 0x3A
+		case (0x3A):ldd_a_hlp(reg, m); break; // 0x3A
 		case (0x3B):dec_sp(reg); break; // 0x3B
 		case (0x3C):inc_a(reg); break; // 0x3C
 		case (0x3D):dec_a(reg); break; // 0x3D
-		case (0x3E):ld_a_x(reg); break; // 0x3E
+		case (0x3E):ld_a_x(reg, operand_x); break; // 0x3E
 		case (0x3F):ccf(reg); break; // 0x3F
 		
 		case (0x40):ld_b_b(reg); break; // 0x40
@@ -642,7 +679,7 @@ void cycle(uint8_t* m, Registers* reg){
 		case (0x43):ld_b_e(reg); break; // 0x43
 		case (0x44):ld_b_h(reg); break; // 0x44
 		case (0x45):ld_b_l(reg); break; // 0x45
-		case (0x46):ld_b_hlp(reg); break; // 0x46
+		case (0x46):ld_b_hlp(m,reg); break; // 0x46
 		case (0x47):ld_b_a(reg); break; // 0x47
 		case (0x48):ld_c_b(reg); break; // 0x48
 		case (0x49):ld_c_c(reg); break; // 0x49
@@ -650,7 +687,7 @@ void cycle(uint8_t* m, Registers* reg){
 		case (0x4B):ld_c_e(reg); break; // 0x4B
 		case (0x4C):ld_c_h(reg); break; // 0x4C
 		case (0x4D):ld_c_l(reg); break; // 0x4D
-		case (0x4E):ld_c_hlp(reg); break; // 0x4E
+		case (0x4E):ld_c_hlp(m,reg); break; // 0x4E
 		case (0x4F):ld_c_a(reg); break; // 0x4F
 		
 		case (0x50):ld_d_b(reg); break; // 0x50
@@ -659,7 +696,7 @@ void cycle(uint8_t* m, Registers* reg){
 		case (0x53):ld_d_e(reg); break; // 0x53
 		case (0x54):ld_d_h(reg); break; // 0x54
 		case (0x55):ld_d_l(reg); break; // 0x55
-		case (0x56):ld_d_hlp(reg); break; // 0x56
+		case (0x56):ld_d_hlp(m,reg); break; // 0x56
 		case (0x57):ld_d_a(reg); break; // 0x57
 		case (0x58):ld_e_b(reg); break; // 0x58
 		case (0x59):ld_e_c(reg); break; // 0x59
@@ -667,7 +704,7 @@ void cycle(uint8_t* m, Registers* reg){
 		case (0x5B):ld_e_e(reg); break; // 0x5B
 		case (0x5C):ld_e_h(reg); break; // 0x5C
 		case (0x5D):ld_e_l(reg); break; // 0x5D
-		case (0x5E):ld_e_hlp(reg); break; // 0x5E
+		case (0x5E):ld_e_hlp(m,reg); break; // 0x5E
 		case (0x5F):ld_e_a(reg); break; // 0x5F
 		
 		case (0x60):ld_h_b(reg); break; // 0x60
@@ -676,7 +713,7 @@ void cycle(uint8_t* m, Registers* reg){
 		case (0x63):ld_h_e(reg); break; // 0x63
 		case (0x64):ld_h_h(reg); break; // 0x64
 		case (0x65):ld_h_l(reg); break; // 0x65
-		case (0x66):ld_h_hlp(reg); break; // 0x66
+		case (0x66):ld_h_hlp(m,reg); break; // 0x66
 		case (0x67):ld_h_a(reg); break; // 0x67
 		case (0x68):ld_l_b(reg); break; // 0x68
 		case (0x69):ld_l_c(reg); break; // 0x69
@@ -684,24 +721,24 @@ void cycle(uint8_t* m, Registers* reg){
 		case (0x6B):ld_l_e(reg); break; // 0x6B
 		case (0x6C):ld_l_h(reg); break; // 0x6C
 		case (0x6D):ld_l_l(reg); break; // 0x6D
-		case (0x6E):ld_l_hlp(reg); break; // 0x6E
+		case (0x6E):ld_l_hlp(m,reg); break; // 0x6E
 		case (0x6F):ld_l_a(reg); break; // 0x6F
 		
-		case (0x70):ld_hlp_b(reg); break; // 0x70
-		case (0x71):ld_hlp_c(reg); break; // 0x71
-		case (0x72):ld_hlp_d(reg); break; // 0x72
-		case (0x73):ld_hlp_e(reg); break; // 0x73
-		case (0x74):ld_hlp_h(reg); break; // 0x74
-		case (0x75):ld_hlp_l(reg); break; // 0x75
+		case (0x70):ld_hlp_b(m,reg); break; // 0x70
+		case (0x71):ld_hlp_c(m,reg); break; // 0x71
+		case (0x72):ld_hlp_d(m,reg); break; // 0x72
+		case (0x73):ld_hlp_e(m,reg); break; // 0x73
+		case (0x74):ld_hlp_h(m,reg); break; // 0x74
+		case (0x75):ld_hlp_l(m,reg); break; // 0x75
 		case (0x76):halt(reg); break; // 0x76
-		case (0x77):ld_hlp_a(reg); break; // 0x77
+		case (0x77):ld_hlp_a(m,reg); break; // 0x77
 		case (0x78):ld_a_b(reg); break; // 0x78
 		case (0x79):ld_a_c(reg); break; // 0x79
 		case (0x7A):ld_a_d(reg); break; // 0x7A
 		case (0x7B):ld_a_e(reg); break; // 0x7B
 		case (0x7C):ld_a_h(reg); break; // 0x7C
 		case (0x7D):ld_a_l(reg); break; // 0x7D
-		case (0x7E):ld_a_hlp(reg); break; // 0x7E
+		case (0x7E):ld_a_hlp(m,reg); break; // 0x7E
 		case (0x7F):ld_a_a(reg); break; // 0x7F
 		
 		case (0x80):add_a_b(reg); break; // 0x80
@@ -806,9 +843,9 @@ void cycle(uint8_t* m, Registers* reg){
 		case (0xDE):sbc_a_x(reg); break; // 0xDE
 		case (0xDF):rst_18(reg); break; // 0xDF
 		
-		case (0xE0):ldh_x_a(reg); break; // 0xE0
+		case (0xE0):ldh_x_a(reg, m, operand_x); break; // 0xE0
 		case (0xE1):pop_hl(reg); break; // 0xE1
-		case (0xE2):ld_cp_a(reg); break; // 0xE2
+		case (0xE2):ld_cp_a(reg, m); break; // 0xE2
 		case (0xE3):nop(reg); break; // 0xE3 blank
 		case (0xE4):nop(reg); break; // 0xE4 blank
 		case (0xE5):push_hl(reg); break; // 0xE5
@@ -823,9 +860,9 @@ void cycle(uint8_t* m, Registers* reg){
 		case (0xEE):xor_x(reg); break; // 0xEE
 		case (0xEF):rst_28(reg); break; // 0xEF
 		
-		case (0xF0):ldh_a_xp(reg); break; // 0xF0
+		case (0xF0):ldh_a_xp(reg, m, operand_x); break; // 0xF0
 		case (0xF1):pop_af(reg); break; // 0xF1
-		case (0xF2):ld_a_cp(reg); break; // 0xF2
+		case (0xF2):ld_a_cp(reg, m); break; // 0xF2
 		case (0xF3):di(reg); break; // 0xF3
 		case (0xF4):nop(reg); break; // 0xF4 blank
 		case (0xF5):push_af(reg); break; // 0xF5
@@ -833,12 +870,14 @@ void cycle(uint8_t* m, Registers* reg){
 		case (0xF7):rst_30(reg); break; // 0xF7
 		case (0xF8):ld_hl_sp_x(reg); break; // 0xF8
 		case (0xF9):ld_sp_hl(reg); break; // 0xF9
-		case (0xFA):ld_a_xp(reg); break; // 0xFA
+		case (0xFA):ld_a_xp(reg, m, operand_xx); break; // 0xFA
 		case (0xFB):ei(reg); break; // 0xFB
 		case (0xFC):nop(reg); break; // 0xFC blank
 		case (0xFD):nop(reg); break; // 0xFD blank
 		case (0xFE):cp_x(reg); break; // 0xFE
 		case (0xFF):rst_38(reg); break; // 0xFF
 	}
+	
+	reg->PC += operand_lengths[instruction];
 }
 	

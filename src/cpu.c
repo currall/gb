@@ -4,6 +4,60 @@
 #include "registers.h"
 #include "rom.h"
 
+/* 
+-- operand lengths --
+number of bytes following the opcode to be used as operands
+0: opcode + operands = 1 byte
+1: opcode + operands = 2 bytes (8-bit  operand)
+2: opcode + operands = 3 bytes (16-bit operand)
+invalid instructions given value of 0 so they are just skipped
+*/
+int operand_lengths[256] = {
+//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+	0, 2, 0, 0, 0, 0, 1, 0, 2, 0, 0, 0, 0, 0, 1, 0, // 0x0x
+	1, 2, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, // 0x1x
+	1, 2, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, // 0x2x
+	1, 2, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, // 0x3x
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x4x
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x5x
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x6x
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x7x
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x8x
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x9x
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0xAx
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0xBx
+	0, 0, 2, 2, 2, 0, 1, 0, 0, 0, 2, 0, 2, 2, 1, 0, // 0xCx
+	0, 0, 2, 0, 2, 0, 1, 0, 0, 0, 2, 0, 2, 0, 1, 0, // 0xDx
+	1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 2, 0, 0, 0, 1, 0, // 0xEx
+	1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 2, 0, 0, 0, 1, 0  // 0xFx
+};
+
+// minimum lengths of each instructions in cpu cycles
+
+int cycle_lengths[256] = {
+//  0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
+    4,  12, 8,  8,  4,  4,  8,  4,  20, 8,  8,  8,  4,  4,  8,  4,  // 0x0x
+    4,  12, 12, 8,  8,  4,  4,  8,  4,  12, 8,  8,  8,  4,  4,  8,  // 0x1x
+    8,  12, 12, 8,  8,  4,  4,  8,  4,  12, 8,  8,  8,  4,  4,  8,  // 0x2x
+    12, 12, 12, 8,  8,  12, 12, 12, 4,  12, 8,  8,  8,  4,  4,  8,  // 0x3x
+    4,  4,  4,  4,  4,  4,  8,  4,  4,  4,  4,  4,  4,  4,  8,  4,  // 0x4x
+    4,  4,  4,  4,  4,  4,  8,  4,  4,  4,  4,  4,  4,  4,  8,  4,  // 0x5x
+    4,  4,  4,  4,  4,  4,  8,  4,  4,  4,  4,  4,  4,  4,  8,  4,  //0x6x
+    8,  8,  8,  8,  8,  8,  4,  8,  4,  4,  4,  4,  4,  4,  8,  4,  // 0x7x
+    4,  4,  4,  4,  4,  4,  8,  4,  4,  4,  4,  4,  4,  4,  8,  4,  // 0x8x
+    4,  4,  4,  4,  4,  4,  8,  4,  4,  4,  4,  4,  4,  4,  8,  4,  // 0x9x
+    4,  4,  4,  4,  4,  4,  8,  4,  4,  4,  4,  4,  4,  4,  8,  4,  // 0xAx
+    4,  4,  4,  4,  4,  4,  8,  4,  4,  4,  4,  4,  4,  4,  8,  4,  // 0xBx
+    8,  12, 12, 16, 12, 8,  20, 8,  16, 12, 4,  24, 24, 8,  16, 8,  // 0xCx
+    8,  12, 12, 16, 8,  16, 20, 8,  16, 12, 8,  24, 8,  16, 16, 8,  // 0xDx
+    12, 12, 8,  16, 8,  16, 16, 8,  4,  16, 8,  16, 8,  4,  16, 8,  // 0xEx
+    12, 12, 8,  16, 8,  16, 8,  8,  16, 8,  12, 4,  16, 8,  16, 8 // 0xFx
+};
+
+/*
+-- Flag Functions --
+*/
+
 void set_flag_z(Registers* reg, int enabled) {
     if (enabled) reg->F |= FLAG_Z;
     else         reg->F &= ~FLAG_Z;
@@ -133,7 +187,7 @@ uint8_t sbc(Registers* reg, uint8_t a, uint8_t value) {
 }
 
 // and
-uint8_t and_a(Registers* reg, uint8_t value) {
+uint8_t cpu_and(Registers* reg, uint8_t value) {
     uint8_t result = reg->A & value;
 
     set_flag_z(reg, result == 0);
@@ -145,7 +199,7 @@ uint8_t and_a(Registers* reg, uint8_t value) {
 }
 
 // or 
-uint8_t or_a(Registers* reg, uint8_t value) {
+uint8_t cpu_or(Registers* reg, uint8_t value) {
     uint8_t result = reg->A | value;
 
     set_flag_z(reg, result == 0);
@@ -157,7 +211,7 @@ uint8_t or_a(Registers* reg, uint8_t value) {
 }
 
 // xor
-uint8_t xor_a(Registers* reg, uint8_t value) {
+uint8_t cpu_xor(Registers* reg, uint8_t value) {
     uint8_t result = reg->A ^ value;
 
     set_flag_z(reg, result == 0);
@@ -168,59 +222,50 @@ uint8_t xor_a(Registers* reg, uint8_t value) {
     return result;
 }
 
+// 8-bit compare
+void cpu_cp(Registers* reg, uint8_t value) {
+    uint8_t result = reg->A - value;
+
+    set_flag_z(reg, result == 0);
+    set_flag_n(reg, 1);
+    set_flag_h(reg, (reg->A & 0xF) < (value & 0xF));
+    set_flag_c(reg, reg->A < value);
+}
+
 // load 16-bit value into memory
 void ld_uint16 (uint8_t* m, uint16_t operand, uint16_t value) {
 	m[operand] = value & 0xFF; // low byte
 	m[operand + 1] = (value >> 8) & 0xFF; // high byte
 }
 
-/* 
--- operand lengths --
-number of bytes following the opcode to be used as operands
-0: opcode + operands = 1 byte
-1: opcode + operands = 2 bytes (8-bit  operand)
-2: opcode + operands = 3 bytes (16-bit operand)
-9: invalid instruction (should never be used)
-*/
-int operand_lengths[256] = {
-//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
-	0, 2, 0, 0, 0, 0, 1, 0, 2, 0, 0, 0, 0, 0, 1, 0, // 0x0x
-	1, 2, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, // 0x1x
-	1, 2, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, // 0x2x
-	1, 2, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, // 0x3x
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x4x
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x5x
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x6x
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x7x
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x8x
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x9x
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0xAx
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0xBx
-	0, 0, 2, 2, 2, 0, 1, 0, 0, 0, 2, 0, 2, 2, 1, 0, // 0xCx
-	0, 0, 2, 9, 2, 0, 1, 0, 0, 0, 2, 9, 2, 9, 1, 0, // 0xDx
-	1, 0, 1, 9, 9, 0, 1, 0, 1, 0, 2, 9, 9, 9, 1, 0, // 0xEx
-	1, 0, 1, 0, 9, 0, 1, 0, 1, 0, 2, 0, 9, 9, 1, 0  // 0xFx
-};
+// push to stack
+void push(Registers* reg, uint8_t* m, uint16_t value) {
+    reg->SP--;                  
+    m[reg->SP] = (value >> 8) & 0xFF;
 
-int cycle_lengths[256] = {
-//  0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
-    4,  12, 8,  8,  4,  4,  8,  4,  20, 8,  8,  8,  4,  4,  8,  4,  // 0x0x
-    4,  12, 12, 8,  8,  4,  4,  8,  4,  12, 8,  8,  8,  4,  4,  8,  // 0x1x
-    8,  12, 12, 8,  8,  4,  4,  8,  4,  12, 8,  8,  8,  4,  4,  8,  // 0x2x
-    12, 12, 12, 8,  8,  12, 12, 12, 4,  12, 8,  8,  8,  4,  4,  8,  // 0x3x
-    4,  4,  4,  4,  4,  4,  8,  4,  4,  4,  4,  4,  4,  4,  8,  4,  // 0x4x
-    4,  4,  4,  4,  4,  4,  8,  4,  4,  4,  4,  4,  4,  4,  8,  4,  // 0x5x
-    4,  4,  4,  4,  4,  4,  8,  4,  4,  4,  4,  4,  4,  4,  8,  4,  //0x6x
-    8,  8,  8,  8,  8,  8,  4,  8,  4,  4,  4,  4,  4,  4,  8,  4,  // 0x7x
-    4,  4,  4,  4,  4,  4,  8,  4,  4,  4,  4,  4,  4,  4,  8,  4,  // 0x8x
-    4,  4,  4,  4,  4,  4,  8,  4,  4,  4,  4,  4,  4,  4,  8,  4,  // 0x9x
-    4,  4,  4,  4,  4,  4,  8,  4,  4,  4,  4,  4,  4,  4,  8,  4,  // 0xAx
-    4,  4,  4,  4,  4,  4,  8,  4,  4,  4,  4,  4,  4,  4,  8,  4,  // 0xBx
-    8,  12, 12, 16, 12, 8,  20, 8,  16, 12, 4,  24, 24, 8,  16, 8,  // 0xCx
-    8,  12, 12, 16, 8,  16, 20, 8,  16, 12, 8,  24, 8,  16, 16, 8,  // 0xDx
-    12, 12, 8,  16, 8,  16, 16, 8,  4,  16, 8,  16, 8,  4,  16, 8,  // 0xEx
-    12, 12, 8,  16, 8,  16, 8,  8,  16, 8,  12, 4,  16, 8,  16, 8 // 0xFx
-};
+    reg->SP--;
+    m[reg->SP] = value & 0xFF;
+}
+
+
+// pop from stack
+uint16_t pop(Registers* reg, uint8_t* m) {
+    uint8_t low = m[reg->SP];
+    reg->SP++;
+
+    uint8_t high = m[reg->SP];
+    reg->SP++;
+
+    return ((uint16_t)high << 8) | low;
+}
+
+// reset
+void rst(Registers* reg, uint8_t* m, uint16_t value) {
+    push(reg, m, reg->PC);
+    reg->PC = value;
+}
+
+// -- instructions --
 
 /*
 information on opcodes found at: https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html
@@ -305,7 +350,7 @@ void rra(Registers* reg) {;}
 void jr_nz_x(Registers* reg, uint8_t operand, int* cycles) {
 	if (!get_flag_z(reg)) {	
 		reg->PC += (int8_t)operand; 
-		*cycles += 4 }
+		*cycles += 4; }
 }
 // 0x21
 void ld_hl_xx(Registers* reg,uint16_t operand) {reg->HL = operand;}
@@ -325,7 +370,7 @@ void daa(Registers* reg) {;}
 void jr_z_x(Registers* reg, uint8_t operand, int* cycles) {
 	if (get_flag_z(reg)) {	
 		reg->PC += (int8_t)operand; 
-		*cycles += 4 }
+		*cycles += 4; }
 }
 // 0x29
 void add_hl_hl(Registers* reg) {reg->HL = add16(reg, reg->HL, reg->HL);}
@@ -348,7 +393,7 @@ void cpl(Registers* reg) {;}
 void jr_nc_x(Registers* reg, uint8_t operand, int* cycles) {
 	if (!get_flag_c(reg)) {	
 		reg->PC += (int8_t)operand; 
-		*cycles += 4 }
+		*cycles += 4; }
 }
 // 0x31
 void ld_sp_xx(Registers* reg, uint16_t operand) {reg->SP = operand;}
@@ -368,7 +413,7 @@ void scf(Registers* reg) {;}
 void jr_c_x(Registers* reg, uint8_t operand, int* cycles) {
 	if (get_flag_c(reg)) {	
 		reg->PC += (int8_t)operand; 
-		*cycles += 4 }
+		*cycles += 4; }
 }
 // 0x39
 void add_hl_sp(Registers* reg) {reg->HL = add16(reg, reg->HL, reg->SP);}
@@ -598,79 +643,79 @@ void sbc_a_a(Registers* reg) {reg->A = sbc(reg, reg->A, reg->A);}
 // --- 0xAx ---
 
 // 0xA0
-void and_b(Registers* reg) {reg->A = and_a(reg, reg->B);}
+void and_b(Registers* reg) {reg->A = cpu_and(reg, reg->B);}
 // 0xA1
-void and_c(Registers* reg) {reg->A = and_a(reg, reg->C);}
+void and_c(Registers* reg) {reg->A = cpu_and(reg, reg->C);}
 // 0xA2
-void and_d(Registers* reg) {reg->A = and_a(reg, reg->D);}
+void and_d(Registers* reg) {reg->A = cpu_and(reg, reg->D);}
 // 0xA3
-void and_e(Registers* reg) {reg->A = and_a(reg, reg->E);}
+void and_e(Registers* reg) {reg->A = cpu_and(reg, reg->E);}
 // 0xA4
-void and_h(Registers* reg) {reg->A = and_a(reg, reg->H);}
+void and_h(Registers* reg) {reg->A = cpu_and(reg, reg->H);}
 // 0xA5
-void and_l(Registers* reg) {reg->A = and_a(reg, reg->L);}
+void and_l(Registers* reg) {reg->A = cpu_and(reg, reg->L);}
 // 0xA6
-void and_hlp(Registers* reg, uint8_t* m) {reg->A = and_a(reg, m[reg->HL]);}
+void and_hlp(Registers* reg, uint8_t* m) {reg->A = cpu_and(reg, m[reg->HL]);}
 // 0xA7
-void and_a(Registers* reg) {reg->A = and_a(reg, reg->A);}
+void and_a(Registers* reg) {reg->A = cpu_and(reg, reg->A);}
 // 0xA8
-void xor_b(Registers* reg) {reg->A = xor_a(reg, reg->B);}
+void xor_b(Registers* reg) {reg->A = cpu_xor(reg, reg->B);}
 // 0xA9
-void xor_c(Registers* reg) {reg->A = xor_a(reg, reg->C);}
+void xor_c(Registers* reg) {reg->A = cpu_xor(reg, reg->C);}
 // 0xAA
-void xor_d(Registers* reg) {reg->A = xor_a(reg, reg->D);}
+void xor_d(Registers* reg) {reg->A = cpu_xor(reg, reg->D);}
 // 0xAB
-void xor_e(Registers* reg) {reg->A = xor_a(reg, reg->E);}
+void xor_e(Registers* reg) {reg->A = cpu_xor(reg, reg->E);}
 // 0xAC
-void xor_h(Registers* reg) {reg->A = xor_a(reg, reg->H);}
+void xor_h(Registers* reg) {reg->A = cpu_xor(reg, reg->H);}
 // 0xAD
-void xor_l(Registers* reg) {reg->A = xor_a(reg, reg->L);}
+void xor_l(Registers* reg) {reg->A = cpu_xor(reg, reg->L);}
 // 0xAE
-void xor_hlp(Registers* reg, uint8_t* m) {reg->A = xor_a(reg, m[reg->HL]);}
+void xor_hlp(Registers* reg, uint8_t* m) {reg->A = cpu_xor(reg, m[reg->HL]);}
 // 0xAF
-void xor_a(Registers* reg) {reg->A = xor_a(reg, reg->A);}
+void xor_a(Registers* reg) {reg->A = cpu_xor(reg, reg->A);}
 
 // --- 0xBx ---
 
 // 0xB0
-void or_b(Registers* reg) {reg->A = or_a(reg, reg->B);}
+void or_b(Registers* reg) {reg->A = cpu_or(reg, reg->B);}
 // 0xB1
-void or_c(Registers* reg) {reg->A = or_a(reg, reg->C);}
+void or_c(Registers* reg) {reg->A = cpu_or(reg, reg->C);}
 // 0xB2
-void or_d(Registers* reg) {reg->A = or_a(reg, reg->D);}
+void or_d(Registers* reg) {reg->A = cpu_or(reg, reg->D);}
 // 0xB3
-void or_e(Registers* reg) {reg->A = or_a(reg, reg->E);}
+void or_e(Registers* reg) {reg->A = cpu_or(reg, reg->E);}
 // 0xB4
-void or_h(Registers* reg) {reg->A = or_a(reg, reg->H);}
+void or_h(Registers* reg) {reg->A = cpu_or(reg, reg->H);}
 // 0xB5
-void or_l(Registers* reg) {reg->A = or_a(reg, reg->L);}
+void or_l(Registers* reg) {reg->A = cpu_or(reg, reg->L);}
 // 0xB6
-void or_hlp(Registers* reg, uint8_t* m) {reg->A = or_a(reg, m[reg->HL]);}
+void or_hlp(Registers* reg, uint8_t* m) {reg->A = cpu_or(reg, m[reg->HL]);}
 // 0xB7
-void or_a(Registers* reg) {reg->A = or_a(reg, reg->A);}
+void or_a(Registers* reg) {reg->A = cpu_or(reg, reg->A);}
 // 0xB8
-void cp_b(Registers* reg) {;}
+void cp_b(Registers* reg) {cpu_cp(reg,reg->B);}
 // 0xB9
-void cp_c(Registers* reg) {;}
+void cp_c(Registers* reg) {cpu_cp(reg,reg->C);}
 // 0xBA
-void cp_d(Registers* reg) {;}
+void cp_d(Registers* reg) {cpu_cp(reg,reg->D);}
 // 0xBB
-void cp_e(Registers* reg) {;}
+void cp_e(Registers* reg) {cpu_cp(reg,reg->E);}
 // 0xBC
-void cp_h(Registers* reg) {;}
+void cp_h(Registers* reg) {cpu_cp(reg,reg->H);}
 // 0xBD
-void cp_l(Registers* reg) {;}
+void cp_l(Registers* reg) {cpu_cp(reg,reg->L);}
 // 0xBE
-void cp_hlp(Registers* reg, uint8_t* m) {;}
+void cp_hlp(Registers* reg, uint8_t* m) {cpu_cp(reg,m[reg->HL]);}
 // 0xBF
-void cp_a(Registers* reg) {;}
+void cp_a(Registers* reg) {cpu_cp(reg,reg->A);}
 
 // --- 0xCx ---
 
 // 0xC0
 void ret_nz(Registers* reg) {;}
 // 0xC1
-void pop_bc(Registers* reg) {;}
+void pop_bc(Registers* reg, uint8_t* m) {reg->BC = pop(reg, m);}
 // 0xC2
 void jp_nz_xx(Registers* reg, uint16_t operand, int* cycles) {
     if (!get_flag_z(reg)) {
@@ -683,11 +728,11 @@ void jp_xx(Registers* reg) {;}
 // 0xC4
 void call_nz_xx(Registers* reg) {;}
 // 0xC5
-void push_bc(Registers* reg) {;}
+void push_bc(Registers* reg, uint8_t* m) {push(reg, m, reg->BC);}
 // 0xC6
 void add_a_x(Registers* reg, uint8_t operand) {reg->A = add(reg, reg->A, operand);}
 // 0xC7
-void rst_0(Registers* reg) {;}
+void rst_0(Registers* reg, uint8_t* m) { rst(reg, m, 0x00); }
 // 0xC8
 void ret_z(Registers* reg) {;}
 // 0xC9
@@ -703,14 +748,14 @@ void call_xx(Registers* reg) {;}
 // 0xCE
 void adc_a_x(Registers* reg, uint8_t operand) {reg->A = adc(reg, reg->A, operand);}
 // 0xCF
-void rst_08(Registers* reg) {;}
+void rst_08(Registers* reg, uint8_t* m) { rst(reg, m, 0x08); }
 
 // --- 0xDx ---
 
 // 0xD0
 void ret_nc(Registers* reg) {;}
 // 0xD1
-void pop_de(Registers* reg) {;}
+void pop_de(Registers* reg, uint8_t* m) {reg->DE = pop(reg, m);}
 // 0xD2
 void jp_nc_xx(Registers* reg, uint16_t operand, int* cycles) {
     if (!get_flag_c(reg)) {
@@ -721,11 +766,11 @@ void jp_nc_xx(Registers* reg, uint16_t operand, int* cycles) {
 // 0xD4
 void call_nc_xx(Registers* reg) {;}
 // 0xD5
-void push_de(Registers* reg) {;}
+void push_de(Registers* reg, uint8_t* m) {push(reg, m, reg->DE);}
 // 0xD6
 void sub_x(Registers* reg, uint8_t operand) {reg->A = sub(reg, reg->A, operand);}
 // 0xD7
-void rst_10(Registers* reg) {;}
+void rst_10(Registers* reg, uint8_t* m) { rst(reg, m, 0x10); }
 // 0xD8
 void ret_c(Registers* reg) {;}
 // 0xD9
@@ -737,22 +782,22 @@ void call_c_xx(Registers* reg) {;}
 // 0xDE
 void sbc_a_x(Registers* reg, uint8_t operand) {reg->A = sbc(reg, reg->A, operand);}
 // 0xDF
-void rst_18(Registers* reg) {;}
+void rst_18(Registers* reg, uint8_t* m) { rst(reg, m, 0x18); }
 
 // --- 0xEx ---
 
 // 0xE0
 void ldh_x_a(Registers* reg, uint8_t* m, uint8_t operand) {m[0xFF00 + operand] = reg->A;}
 // 0xE1
-void pop_hl(Registers* reg) {;}
+void pop_hl(Registers* reg, uint8_t* m) {reg->HL = pop(reg, m);}
 // 0xE2
 void ld_cp_a(Registers* reg, uint8_t* m) {m[0xFF00 + reg->C] = reg->A;}
 // 0xE5
-void push_hl(Registers* reg) {;}
+void push_hl(Registers* reg, uint8_t* m) {push(reg, m, reg->HL);}
 // 0xE6
-void and_x(Registers* reg, uint8_t operand) {reg->A = and_a(reg, operand);}
+void and_x(Registers* reg, uint8_t operand) {reg->A = cpu_and(reg, operand);}
 // 0xE7
-void rst_20(Registers* reg) {;}
+void rst_20(Registers* reg, uint8_t* m) { rst(reg, m, 0x20); }
 // 0xE8
 void add_sp_x(Registers* reg) {;}
 // 0xE9
@@ -760,26 +805,26 @@ void jp_hlp(Registers* reg) {reg->PC = reg->HL;}
 // 0xEA
 void ld_xx_a(Registers* reg, uint8_t* m, uint16_t operand) {m[operand] = reg->A;}
 // 0xEE
-void xor_x(Registers* reg, uint8_t operand) {reg->A = xor_a(reg, operand);}
+void xor_x(Registers* reg, uint8_t operand) {reg->A = cpu_xor(reg, operand);}
 // 0xEF
-void rst_28(Registers* reg) {;}
+void rst_28(Registers* reg, uint8_t* m) { rst(reg, m, 0x28); }
 
 // --- 0xFx ---
 
 // 0xF0
 void ldh_a_xp(Registers* reg, uint8_t* m, uint8_t operand) {reg->A = m[0xFF00 + operand];}
 // 0xF1
-void pop_af(Registers* reg) {;}
+void pop_af(Registers* reg, uint8_t* m) {reg->AF = pop(reg, m);}
 // 0xF2
 void ld_a_cp(Registers* reg, uint8_t* m) {reg->A = m[0xFF00 + reg->C];}
 // 0xF3
 void di(Registers* reg) {;}
 // 0xF5
-void push_af(Registers* reg) {;}
+void push_af(Registers* reg, uint8_t* m) {push(reg, m, reg->AF);}
 // 0xF6
-void or_x(Registers* reg, uint8_t operand) {reg->A = or_a(reg, operand);}
+void or_x(Registers* reg, uint8_t operand) {reg->A = cpu_or(reg, operand);}
 // 0xF7
-void rst_30(Registers* reg) {;}
+void rst_30(Registers* reg, uint8_t* m) { rst(reg, m, 0x30); }
 // 0xF8
 void ld_hl_sp_x(Registers* reg) {;}
 // 0xF9
@@ -789,9 +834,9 @@ void ld_a_xp(Registers* reg, uint8_t* m, uint16_t operand) {reg->A = m[operand];
 // 0xFB
 void ei(Registers* reg) {;}
 // 0xFE
-void cp_x(Registers* reg, uint8_t operand) {;}
+void cp_x(Registers* reg, uint8_t operand) {cpu_cp(reg,operand);}
 // 0xFF
-void rst_38(Registers* reg) {;}
+void rst_38(Registers* reg, uint8_t* m) { rst(reg, m, 0x38); }
 
 
 int cycle(uint8_t* m, Registers* reg){
@@ -800,10 +845,21 @@ int cycle(uint8_t* m, Registers* reg){
 	uint8_t operand_x = m[reg->PC + 1];
 	uint16_t operand_xx = m[reg->PC + 1] + (m[reg->PC + 2] << 8);
 	
-	printf("instruction: 0x%x\n",instruction);
-	printf("operand: 0x%x\n",operand_xx);
-	printf("SP: 0x%x\n",reg->SP);
-	
+	printf(
+		"0x%02x | 0x%02x | 0x%04x | "
+		"PC:0x%02x | SP:0x%04x | "
+		"AF:0x%04x | BC:0x%04x | "
+		"DE:0x%04x | HL:0x%04x",
+		instruction,
+		operand_x,
+		operand_xx,
+		reg->PC,
+		reg->SP,
+		reg->AF,
+		reg->BC,
+		reg->DE,
+		reg->HL
+	);
 	int cycles = cycle_lengths[instruction];
 	
 	/*
@@ -854,7 +910,7 @@ int cycle(uint8_t* m, Registers* reg){
 		case (0x1E):ld_e_x(reg, operand_x); break; // 0x1E
 		case (0x1F):rra(reg); break; // 0x1F
 		
-		case (0x20):jr_nz_x(reg, operand_x, cycles); break; // 0x20
+		case (0x20):jr_nz_x(reg, operand_x, &cycles); break; // 0x20
 		case (0x21):ld_hl_xx(reg, operand_xx); break; // 0x21
 		case (0x22):ldi_hlp_a(reg, m); break; // 0x22
 		case (0x23):inc_hl(reg); break; // 0x23
@@ -862,7 +918,7 @@ int cycle(uint8_t* m, Registers* reg){
 		case (0x25):dec_h(reg); break; // 0x25
 		case (0x26):ld_h_x(reg, operand_x); break; // 0x26
 		case (0x27):daa(reg); break; // 0x27
-		case (0x28):jr_z_x(reg, operand_x, cycles); break; // 0x28
+		case (0x28):jr_z_x(reg, operand_x, &cycles); break; // 0x28
 		case (0x29):add_hl_hl(reg); break; // 0x29
 		case (0x2A):ldi_a_hlp(reg, m); break; // 0x2A
 		case (0x2B):dec_hl(reg); break; // 0x2B
@@ -871,7 +927,7 @@ int cycle(uint8_t* m, Registers* reg){
 		case (0x2E):ld_l_x(reg, operand_x); break; // 0x2E
 		case (0x2F):cpl(reg); break; // 0x2F
 		
-		case (0x30):jr_nc_x(reg, operand_x, cycles); break; // 0x30
+		case (0x30):jr_nc_x(reg, operand_x, &cycles); break; // 0x30
 		case (0x31):ld_sp_xx(reg, operand_xx); break; // 0x31
 		case (0x32):ldd_hlp_a(reg, m); break; // 0x32
 		case (0x33):inc_sp(reg); break; // 0x33
@@ -879,7 +935,7 @@ int cycle(uint8_t* m, Registers* reg){
 		case (0x35):dec_hlp(reg); break; // 0x35
 		case (0x36):ld_hlp_x(reg, m, operand_x); break; // 0x36
 		case (0x37):scf(reg); break; // 0x37
-		case (0x38):jr_c_x(reg, operand_x, cycles); break; // 0x38
+		case (0x38):jr_c_x(reg, operand_x, &cycles); break; // 0x38
 		case (0x39):add_hl_sp(reg); break; // 0x39
 		case (0x3A):ldd_a_hlp(reg, m); break; // 0x3A
 		case (0x3B):dec_sp(reg); break; // 0x3B
@@ -1025,13 +1081,13 @@ int cycle(uint8_t* m, Registers* reg){
 		case (0xBF):cp_a(reg); break; // 0xBF
 		
 		case (0xC0):ret_nz(reg); break; // 0xC0
-		case (0xC1):pop_bc(reg); break; // 0xC1
-		case (0xC2):jp_nz_xx(reg,operand_xx,cycles); break; // 0xC2
+		case (0xC1):pop_bc(reg,m); break; // 0xC1
+		case (0xC2):jp_nz_xx(reg, operand_xx, &cycles); break; // 0xC2
 		case (0xC3):jp_xx(reg); break; // 0xC3
 		case (0xC4):call_nz_xx(reg); break; // 0xC4
-		case (0xC5):push_bc(reg); break; // 0xC5
+		case (0xC5):push_bc(reg, m); break; // 0xC5
 		case (0xC6):add_a_x(reg, operand_x); break; // 0xC6
-		case (0xC7):rst_0(reg); break; // 0xC7
+		case (0xC7):rst_0(reg,m); break; // 0xC7
 		case (0xC8):ret_z(reg); break; // 0xC8
 		case (0xC9):ret(reg); break; // 0xC9
 		case (0xCA):jp_z_xx(reg, operand_xx); break; // 0xCA
@@ -1039,16 +1095,16 @@ int cycle(uint8_t* m, Registers* reg){
 		case (0xCC):call_z_xx(reg); break; // 0xCC
 		case (0xCD):call_xx(reg); break; // 0xCD
 		case (0xCE):adc_a_x(reg, operand_x); break; // 0xCE
-		case (0xCF):rst_08(reg); break; // 0xCF
+		case (0xCF):rst_08(reg,m); break; // 0xCF
 		
 		case (0xD0):ret_nc(reg); break; // 0xD0
-		case (0xD1):pop_de(reg); break; // 0xD1
-		case (0xD2):jp_nc_xx(reg,operand_xx,cycles); break; // 0xD2
+		case (0xD1):pop_de(reg,m); break; // 0xD1
+		case (0xD2):jp_nc_xx(reg, operand_xx, &cycles); break; // 0xD2
 		case (0xD3):nop(reg); break; // 0xD3 blank
 		case (0xD4):call_nc_xx(reg); break; // 0xD4
-		case (0xD5):push_de(reg); break; // 0xD5
+		case (0xD5):push_de(reg, m); break; // 0xD5
 		case (0xD6):sub_x(reg, operand_x); break; // 0xD6
-		case (0xD7):rst_10(reg); break; // 0xD7
+		case (0xD7):rst_10(reg,m); break; // 0xD7
 		case (0xD8):ret_c(reg); break; // 0xD8
 		case (0xD9):reti(reg); break; // 0xD9
 		case (0xDA):jp_c_xx(reg, operand_xx); break; // 0xDA
@@ -1056,16 +1112,16 @@ int cycle(uint8_t* m, Registers* reg){
 		case (0xDC):call_c_xx(reg); break; // 0xDC
 		case (0xDD):nop(reg); break; // 0xDD blank
 		case (0xDE):sbc_a_x(reg, operand_x); break; // 0xDE
-		case (0xDF):rst_18(reg); break; // 0xDF
+		case (0xDF):rst_18(reg,m); break; // 0xDF
 		
 		case (0xE0):ldh_x_a(reg, m, operand_x); break; // 0xE0
-		case (0xE1):pop_hl(reg); break; // 0xE1
+		case (0xE1):pop_hl(reg,m); break; // 0xE1
 		case (0xE2):ld_cp_a(reg, m); break; // 0xE2
 		case (0xE3):nop(reg); break; // 0xE3 blank
 		case (0xE4):nop(reg); break; // 0xE4 blank
-		case (0xE5):push_hl(reg); break; // 0xE5
+		case (0xE5):push_hl(reg, m); break; // 0xE5
 		case (0xE6):and_x(reg, operand_x); break; // 0xE6
-		case (0xE7):rst_20(reg); break; // 0xE7
+		case (0xE7):rst_20(reg,m); break; // 0xE7
 		case (0xE8):add_sp_x(reg); break; // 0xE8
 		case (0xE9):jp_hlp(reg); break; // 0xE9
 		case (0xEA):ld_xx_a(reg,m,operand_x); break; // 0xEA
@@ -1073,24 +1129,24 @@ int cycle(uint8_t* m, Registers* reg){
 		case (0xEC):nop(reg); break; // 0xEC blank
 		case (0xED):nop(reg); break; // 0xED blank
 		case (0xEE):xor_x(reg, operand_x); break; // 0xEE
-		case (0xEF):rst_28(reg); break; // 0xEF
+		case (0xEF):rst_28(reg,m); break; // 0xEF
 		
 		case (0xF0):ldh_a_xp(reg, m, operand_x); break; // 0xF0
-		case (0xF1):pop_af(reg); break; // 0xF1
+		case (0xF1):pop_af(reg,m); break; // 0xF1
 		case (0xF2):ld_a_cp(reg, m); break; // 0xF2
 		case (0xF3):di(reg); break; // 0xF3
 		case (0xF4):nop(reg); break; // 0xF4 blank
-		case (0xF5):push_af(reg); break; // 0xF5
+		case (0xF5):push_af(reg, m); break; // 0xF5
 		case (0xF6):or_x(reg, operand_x); break; // 0xF6
-		case (0xF7):rst_30(reg); break; // 0xF7
+		case (0xF7):rst_30(reg,m); break; // 0xF7
 		case (0xF8):ld_hl_sp_x(reg); break; // 0xF8
 		case (0xF9):ld_sp_hl(reg); break; // 0xF9
 		case (0xFA):ld_a_xp(reg, m, operand_xx); break; // 0xFA
 		case (0xFB):ei(reg); break; // 0xFB
 		case (0xFC):nop(reg); break; // 0xFC blank
 		case (0xFD):nop(reg); break; // 0xFD blank
-		case (0xFE):cp_x(reg); break; // 0xFE
-		case (0xFF):rst_38(reg); break; // 0xFF
+		case (0xFE):cp_x(reg, operand_x); break; // 0xFE
+		case (0xFF):rst_38(reg,m); break; // 0xFF
 	}
 	
 	reg->PC += operand_lengths[instruction]+1;

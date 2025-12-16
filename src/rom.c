@@ -20,6 +20,6 @@ void printROM(uint8_t* m) {
 	uint16_t MemROMSize = 32 * 1024; // 32kb
 	
 	for (int i=0; i< MemROMSize; i++){
-		printf("%x ",m[i]);
+		printf("%02x ",m[i]);
 	}
 }

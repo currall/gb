@@ -5,7 +5,15 @@
 #define TRUE 1
 #define FALSE 0
 
-#define PRINT_ROM_HEADER TRUE
-#define PRINT_MEMORY FALSE
+#define PRINT_ROM_HEADER 	TRUE
+#define PRINT_MEMORY 		FALSE
+#define PRINT_CYCLE 		FALSE
+
+#define SHOW_INSTRUCTION	TRUE
+#define SHOW_OPERANDS 		TRUE
+#define SHOW_CPU		 	TRUE
+#define SHOW_REGISTERS	 	FALSE
+#define SHOW_IME			TRUE
+#define SHOW_CYCLES		 	TRUE
 
 #endif

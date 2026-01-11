@@ -12,6 +12,9 @@ typedef struct {
     union { struct { uint8_t L, H; }; uint16_t HL; };
 	uint16_t	SP;
 	uint16_t 	PC;
+	uint8_t 	IME;
+	uint8_t		IME_delay;
+	uint8_t		halted;
 
 } Registers;
 

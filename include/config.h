@@ -16,4 +16,8 @@
 #define SHOW_IME			TRUE
 #define SHOW_CYCLES		 	TRUE
 
+#define CPU_HZ 		4194304
+#define FPS			60
+#define FRAME_TIME 	(1.0 / FPS)
+
 #endif

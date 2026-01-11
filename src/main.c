@@ -11,8 +11,6 @@
 #include "registers.h"
 #include "rom.h"
 
-#define CPU_HZ 4194304
-
 void print_table_header() {
 	/*
 	printf("\n");
@@ -125,7 +123,11 @@ int main(int argc, char *argv[]){
 	
 	//for (int i=0;i<50000;i++){ // debug first 10 instructions
 	while(true){ // main loop
+	
+		// measure time taken to run instructions
+		clock_t frame_start = clock();
 		
+		// process all instructions for frame
 		while(frame_tracker < (CPU_HZ / 60)) {
 			int cycle_inc = cycle(memory,&reg);
 			cycles += cycle_inc;
@@ -141,7 +143,16 @@ int main(int argc, char *argv[]){
 			}
 		}
 		
-		if (second_tracker>CPU_HZ){
+		// end timer
+		while ((double)(clock() - frame_start) / CLOCKS_PER_SEC < FRAME_TIME) {
+            // do nothing until frame time has passed
+        }
+		
+		// reset frame cycle counter
+		frame_tracker = 0;
+		
+		// check if 1 second has passed
+		if (second_tracker > CPU_HZ){
 			printf("1 second passed\n");
 			second_tracker = 0;
 		}

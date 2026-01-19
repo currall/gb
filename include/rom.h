@@ -5,7 +5,8 @@
 #include <stdint.h>
 #include "header.h"
 
-void readROM(char* file, Header h, uint8_t* m);
-void printROM(uint8_t* m);
+void read_ROM(char* file, Header h, uint8_t* m);
+void read_boot_ROM(char* file, Header h, uint8_t* m);
+void print_ROM(uint8_t* m);
 
 #endif

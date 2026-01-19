@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
 // read any number of bytes from file
-int readData(char* file, void* buf, int pos, int bytesToRead){
+int read_data(char* file, void* buf, int pos, int bytesToRead){
     int fd = open(file, O_RDONLY | O_BINARY);
     if (fd < 0){
         perror("invalid file descriptor");

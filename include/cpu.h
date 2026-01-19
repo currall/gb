@@ -2,6 +2,7 @@
 #ifndef CPU_H
 #define CPU_H
 
+#include "memory.h"
 #include "registers.h"
 #include "rom.h"
 
@@ -15,6 +16,7 @@ int get_flag_n(Registers* reg);
 int get_flag_h(Registers* reg);
 int get_flag_c(Registers* reg);
 
-int cycle(uint8_t* m, Registers* reg);
+void cpu_init(Registers* reg);
+int cycle(Memory* m, Registers* reg);
 
 #endif

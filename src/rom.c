@@ -7,16 +7,19 @@
 
 // implement banking for larger roms here
 
-void readROM(char* file, Header h, uint8_t* m){
+void read_ROM(char* file, Header h, uint8_t* m){
     uint16_t ROMSizeB = 32 * 1024 * (1 << h.ROMSize); // rom size in bytes
 	uint16_t MemROMSize = 32 * 1024; // 32kb
-	uint16_t BootROMSize = 256; // 256 bytes
 	
-    readData(file, m, 0, MemROMSize); // read ROM data into RAM
-	readData("dmg_boot.bin", m, 0, BootROMSize); // read Boot ROM data into RAM
+    read_data(file, m, 0, MemROMSize); // read ROM data into RAM
 }
 
-void printROM(uint8_t* m) {
+void read_boot_ROM(char* file, Header h, uint8_t* m){
+	read_data("dmg_boot.bin", m, 0, 256); // read Boot ROM data into RAM
+}
+
+
+void print_ROM(uint8_t* m) {
 	uint16_t MemROMSize = 32 * 1024; // 32kb
 	
 	for (int i=0; i< MemROMSize; i++){

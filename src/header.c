@@ -5,13 +5,13 @@
 #include "header.h"
 
 // read ROM header from ROM file
-Header readHeader(char* file){
+Header read_header(char* file){
     Header h;
-    readData(file, &h, 0x0134, sizeof(Header));
+    read_data(file, &h, 0x0134, sizeof(Header));
     return h;
 }
 
-void printHeader(Header h){
+void print_header(Header h){
     printf("ROM Name:               %s\n",h.ROMName);
     printf("New Licensee:           %d\n",h.NewLicensee);
     printf("SuperGameBoy Features:  %d\n",h.SGBFeatures);

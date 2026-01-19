@@ -17,7 +17,7 @@ typedef struct {
 
 } Header;
 
-Header readHeader(char* file);
-void printHeader(Header h);
+Header read_header(char* file);
+void print_header(Header h);
 
 #endif

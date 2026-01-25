@@ -1,6 +1,11 @@
 #include "ppu.h"
 #include "memory.h"
 
+// interrupt addresses
+
+#define IF 0xFF0F
+#define IE 0xFFFF
+
 /*
 Game Boy timing:
 - 456 cycles per scanline
@@ -66,7 +71,7 @@ void draw_bg(int scanline, uint32_t* framebuffer, Memory* m) {
 		if (lcdc & (1 << 4)) { // unsigned
 			tile = 0x8000 + tile_id * 16;
 		} else { // signed
-			tile = 0x8800 + ((int8_t) tile_id) * 16;
+			tile = 0x9000 + ((int8_t) tile_id) * 16;
 		}
 
         uint8_t low  = read8(m, tile + pixel_y * 2);
@@ -142,50 +147,93 @@ void draw_fg(int scanline, uint32_t* framebuffer, Memory* m) {
 	}
 }
 
-void ppu_step(PPU* ppu, int cycles, Memory* m) {
+void ppu_step(PPU* ppu, Memory* m) {
 	
-	if (!(read8(m,LCDC) & 0x80)) { // turn on screen if off
-		ppu->scanline = 0;
-		ppu->dot = 0;
-		ppu_mode_set(ppu, m, MODE_HBLANK);
-		write8(m, LY, 0);
-		return;
-	}
+    ppu->dot ++;
 	
-    ppu->dot += cycles;
+	switch (ppu->mode) {
+		
+		case MODE_HBLANK:
+		
+			if (ppu->dot >= 210) { // end of hblank
+				ppu->dot -= 210; // return to start of scanline
+				
+				uint8_t ly = read8(m, LY);
 
-    if (ppu->dot >= 456) {
-		ppu->dot -= 456; 
-		ppu->scanline++;
-		write8(m, LY, ppu->scanline);
+				if (ly < 144) {
+					draw_bg(ly, framebuffer, m);
+					draw_fg(ly, framebuffer, m);
+				}
 
-		if (ppu->scanline == 144) {
-			ppu_mode_set(ppu, m, MODE_VBLANK);
-			ppu->frame_ready = 1;
-			uint8_t iflags = read8(m, 0xFF0F);
-			iflags |= 0x01;
-			write8(m, 0xFF0F, iflags);
-		}
-		else if (ppu->scanline > 153) {
-			ppu->scanline = 0;
-			write8(m, LY, 0);
-			ppu_mode_set(ppu, m, MODE_OAM);
-			ppu->frame_ready = 0;
-		}
-	}
-
-    if (ppu->scanline < 144) {
-		if (ppu->dot < 80) {
-			ppu_mode_set(ppu, m, MODE_OAM);
-		}
-		else if (ppu->dot < 252) {
-			ppu_mode_set(ppu, m, MODE_VRAM);
-		}
-		else {
-			draw_bg(ppu->scanline, framebuffer, m);
-			draw_fg(ppu->scanline, framebuffer, m);
-			ppu_mode_set(ppu, m, MODE_HBLANK);
-		}
+				ly++;
+				write8(m, LY, ly); // increase LY counter (scanline counter)
+				
+				if (ly == 144) {
+					ppu_mode_set(ppu, m, MODE_VBLANK);
+					ppu->frame_ready = 1;
+					// interrupt
+					uint8_t iflags = read8(m, IF);
+					iflags |= (1 << 0); 
+					write8(m, IF, iflags);
+					
+				} else {
+					ppu_mode_set(ppu, m, MODE_OAM);
+					ppu->frame_ready = 0;
+				}
+			} break;
+		
+		case MODE_VBLANK:
+		
+			if (ppu->dot >= 456) {
+				ppu->dot -= 456;
+				
+				uint8_t ly = read8(m, LY) + 1;
+				write8(m, LY, ly); // increase LY counter (scanline counter)
+				
+				if (ly == 154) {					
+					draw_bg(ppu->scanline, framebuffer, m);
+					draw_fg(ppu->scanline, framebuffer, m);
+					ly = 0;
+					write8(m, LY, ly); // reset LY
+					ppu_mode_set(ppu,m,MODE_OAM);
+				}
+			} break;
+			
+		case MODE_OAM:
+		
+			if (ppu->dot >= 80) {
+				ppu->dot -= 80;
+				ppu_mode_set(ppu,m,MODE_VRAM);				
+			} break;
+		
+		case MODE_VRAM:
+		
+			if (ppu->dot >= 166) {
+				ppu->dot -= 166;
+				uint8_t stat = read8(m, STAT);
+				uint8_t lyc = read8(m, LYC);
+				uint8_t ly = read8(m, LY);
+				
+				if (stat & (1 << 3)) {
+					// interrupt
+					uint8_t iflags = read8(m, IF);
+					iflags |= (1 << 1); 
+					write8(m, IF, iflags);
+				}
+				if ((lyc == ly) && (stat & (1<<6))) {
+					// interrupt
+					uint8_t iflags = read8(m, IF);
+					iflags |= (1 << 1); 
+					write8(m, IF, iflags);
+				}
+				
+				stat &= ~(1<<2);
+				stat |= ((lyc == ly) << 2);
+				write8(m, STAT, stat);
+				ppu_mode_set(ppu,m,MODE_HBLANK);
+				
+			} break;
+		
 	}
 }
 

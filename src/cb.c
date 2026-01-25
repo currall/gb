@@ -32,17 +32,17 @@ int cb_cycle_lengths[256] = {
 uint8_t rlc(Registers* reg, uint8_t value) {
 	int carry = (value & 0x80) >> 7;
 	
-	if(value & 0x80) set_flag_c(reg, 1);
-	else set_flag_c(reg, 0);
+	if(value & 0x80) set_flag(FLAG_C, reg, 1);
+	else set_flag(FLAG_C, reg, 0);
 	
 	value <<= 1;
 	value += carry;
 	
-	if(value) set_flag_z(reg, 0);
-	else set_flag_z(reg, 1);
+	if(value) set_flag(FLAG_Z, reg, 0);
+	else set_flag(FLAG_Z, reg, 1);
 	
-	set_flag_n(reg, 0);
-	set_flag_h(reg, 0);
+	set_flag(FLAG_N,  reg, 0);
+	set_flag(FLAG_H, reg, 0);
 	
 	return value;
 }
@@ -52,110 +52,110 @@ uint8_t rrc(Registers* reg, uint8_t value) {
 	value >>= 1;
 	
 	if(carry) {
-		set_flag_c(reg, 1);
+		set_flag(FLAG_C, reg, 1);
 		value |= 0x80;
-	}	else set_flag_c(reg, 0);
+	}	else set_flag(FLAG_C, reg, 0);
 	
-	if(value) set_flag_z(reg, 0);
-	else set_flag_z(reg, 1);
+	if(value) set_flag(FLAG_Z, reg, 0);
+	else set_flag(FLAG_Z, reg, 1);
 	
-	set_flag_n(reg, 0);
-	set_flag_h(reg, 0);
+	set_flag(FLAG_N,  reg, 0);
+	set_flag(FLAG_H, reg, 0);
 	
 	return value;
 }
 uint8_t rl(Registers* reg, uint8_t value) {
-	int carry = get_flag_c(reg) ? 1 : 0;
+	int carry = get_flag(FLAG_C,  reg) ? 1 : 0;
 	
-	if(value & 0x80) set_flag_c(reg, 1);
-	else set_flag_c(reg, 0);
+	if(value & 0x80) set_flag(FLAG_C, reg, 1);
+	else set_flag(FLAG_C, reg, 0);
 	
 	value <<= 1;
 	value += carry;
 	
-	if(value) set_flag_z(reg, 0);
-	else set_flag_z(reg, 1);
+	if(value) set_flag(FLAG_Z, reg, 0);
+	else set_flag(FLAG_Z, reg, 1);
 	
-	set_flag_n(reg, 0);
-	set_flag_h(reg, 0);
+	set_flag(FLAG_N,  reg, 0);
+	set_flag(FLAG_H, reg, 0);
 	
 	return value;
 }
 uint8_t rr(Registers* reg, uint8_t value) {
 	value >>= 1;
-	if(get_flag_c(reg)) value |= 0x80;
+	if(get_flag(FLAG_C,  reg)) value |= 0x80;
 	
-	if(value & 0x01) set_flag_c(reg, 1);
-	else set_flag_c(reg, 0);
+	if(value & 0x01) set_flag(FLAG_C, reg, 1);
+	else set_flag(FLAG_C, reg, 0);
 	
-	if(value) set_flag_z(reg, 0);
-	else set_flag_z(reg, 1);
+	if(value) set_flag(FLAG_Z, reg, 0);
+	else set_flag(FLAG_Z, reg, 1);
 	
-	set_flag_n(reg, 0);
-	set_flag_h(reg, 0);
+	set_flag(FLAG_N,  reg, 0);
+	set_flag(FLAG_H, reg, 0);
 	
 	return value;
 }
 uint8_t sla(Registers* reg, uint8_t value) {
-	if(value & 0x80) set_flag_c(reg, 1);
-	else set_flag_c(reg, 0);
+	if(value & 0x80) set_flag(FLAG_C, reg, 1);
+	else set_flag(FLAG_C, reg, 0);
 	
 	value <<= 1;
 	
-	if(value) set_flag_z(reg, 0);
-	else set_flag_z(reg, 1);
+	if(value) set_flag(FLAG_Z, reg, 0);
+	else set_flag(FLAG_Z, reg, 1);
 	
-	set_flag_n(reg, 0);
-	set_flag_h(reg, 0);
+	set_flag(FLAG_N,  reg, 0);
+	set_flag(FLAG_H, reg, 0);
 	
 	return value;
 }
 uint8_t sra(Registers* reg, uint8_t value) {
-	if(value & 0x01) set_flag_c(reg, 1);
-	else set_flag_c(reg, 0);
+	if(value & 0x01) set_flag(FLAG_C, reg, 1);
+	else set_flag(FLAG_C, reg, 0);
 	
 	value = (value & 0x80) | (value >> 1);
 	
-	if(value) set_flag_z(reg, 0);
-	else set_flag_z(reg, 1);
+	if(value) set_flag(FLAG_Z, reg, 0);
+	else set_flag(FLAG_Z, reg, 1);
 	
-	set_flag_n(reg, 0);
-	set_flag_h(reg, 0);
+	set_flag(FLAG_N,  reg, 0);
+	set_flag(FLAG_H, reg, 0);
 	
 	return value;
 }
 uint8_t swap(Registers* reg, uint8_t value) {
 	value = ((value & 0xf) << 4) | ((value & 0xf0) >> 4);
 	
-	if(value) set_flag_z(reg, 0);
-	else set_flag_z(reg, 1);
+	if(value) set_flag(FLAG_Z, reg, 0);
+	else set_flag(FLAG_Z, reg, 1);
 	
-	set_flag_n(reg, 0);
-	set_flag_h(reg, 0);
-	set_flag_c(reg, 0);
+	set_flag(FLAG_N,  reg, 0);
+	set_flag(FLAG_H, reg, 0);
+	set_flag(FLAG_C, reg, 0);
 	
 	return value;
 }
 uint8_t srl(Registers* reg, uint8_t value) {
-	if(value & 0x01) set_flag_c(reg, 1);
-	else set_flag_c(reg, 0);
+	if(value & 0x01) set_flag(FLAG_C, reg, 1);
+	else set_flag(FLAG_C, reg, 0);
 	
 	value >>= 1;
 	
-	if(value) set_flag_z(reg, 0);
-	else set_flag_z(reg, 1);
+	if(value) set_flag(FLAG_Z, reg, 0);
+	else set_flag(FLAG_Z, reg, 1);
 	
-	set_flag_n(reg, 0);
-	set_flag_h(reg, 0);
+	set_flag(FLAG_N,  reg, 0);
+	set_flag(FLAG_H, reg, 0);
 	
 	return value;
 }
 void bit(Registers* reg, uint8_t bit, uint8_t value) {
-	if(value & bit) set_flag_z(reg, 0);
-	else set_flag_z(reg, 1);
+	if(value & bit) set_flag(FLAG_Z, reg, 0);
+	else set_flag(FLAG_Z, reg, 1);
 	
-	set_flag_n(reg, 0);
-	set_flag_h(reg, 1);
+	set_flag(FLAG_N,  reg, 0);
+	set_flag(FLAG_H, reg, 1);
 }
 uint8_t set(Registers* reg, uint8_t bit, uint8_t value) {
 	value |= bit;
@@ -289,16 +289,16 @@ void srl_l(Registers* reg) {reg->L = srl(reg, reg->L);}
 void srl_hlp(Registers* reg, Memory* m) {write8(m, reg->HL, srl(reg, read8(m, reg->HL)));}
 // 0x3F
 void srl_a(Registers* reg) {
-	if(reg->A & 0x01) set_flag_c(reg, 1);
-	else set_flag_c(reg, 0);
+	if(reg->A & 0x01) set_flag(FLAG_C, reg, 1);
+	else set_flag(FLAG_C, reg, 0);
 	
 	reg->A >>= 1;
 	
-	if(reg->A) set_flag_z(reg, 0);
-	else set_flag_z(reg, 1);
+	if(reg->A) set_flag(FLAG_Z, reg, 0);
+	else set_flag(FLAG_Z, reg, 1);
 	
-	set_flag_n(reg, 0);
-	set_flag_h(reg, 0);
+	set_flag(FLAG_N,  reg, 0);
+	set_flag(FLAG_H, reg, 0);
 }
 // 0x40
 void bit_0_b(Registers* reg) {bit(reg, 1 << 0, reg->B);}

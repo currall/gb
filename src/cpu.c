@@ -2,7 +2,6 @@
 #include <stdlib.h>
 
 #include "cb.h"
-#include "config.h"
 #include "memory.h"
 #include "registers.h"
 #include "rom.h"
@@ -14,8 +13,10 @@ number of bytes following the opcode to be used as operands
 1: opcode + operands = 2 bytes (8-bit  operand)
 2: opcode + operands = 3 bytes (16-bit operand)
 invalid instructions given value of 0 so they are just skipped
+
+source: https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html
 */
-int operand_lengths[256] = {
+int old_operand_lengths[256] = {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 	0, 2, 0, 0, 0, 0, 1, 0, 2, 0, 0, 0, 0, 0, 1, 0, // 0x0x
 	1, 2, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, // 0x1x
@@ -33,6 +34,25 @@ int operand_lengths[256] = {
 	0, 0, 2, 0, 2, 0, 1, 0, 0, 0, 2, 0, 2, 0, 1, 0, // 0xDx
 	1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 2, 0, 0, 0, 1, 0, // 0xEx
 	1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 2, 0, 0, 0, 1, 0  // 0xFx
+};
+int operand_lengths[256] = {
+//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+	0, 2, 0, 0, 0, 0, 1, 0, 2, 0, 0, 0, 0, 0, 1, 0, // 0x0x
+	1, 2, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, // 0x1x
+	1, 2, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, // 0x2x
+	1, 2, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, // 0x3x
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x4x
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x5x
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x6x
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x7x
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x8x
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0x9x
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0xAx
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0xBx
+	0, 0, 2, 2, 2, 0, 1, 0, 0, 0, 2, 1, 2, 2, 1, 0, // 0xCx
+	0, 0, 2, 0, 2, 0, 1, 0, 0, 0, 2, 0, 2, 0, 1, 0, // 0xDx
+	1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 2, 0, 0, 0, 1, 0, // 0xEx
+	1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 2, 0, 0, 0, 1, 0  // 0xFx
 };
 
 // minimum lengths of each instructions in cpu cycles
@@ -147,13 +167,30 @@ uint8_t adc(Registers* reg, uint8_t a, uint8_t value) {
 }
 
 // 8-bit subtract with carry
-uint8_t sbc(Registers* reg, uint8_t a, uint8_t value) {
+uint8_t sbc2(Registers* reg, uint8_t a, uint8_t value) {
     uint8_t carry = get_flag(FLAG_C, reg) ? 1 : 0;
     int16_t result = (int16_t)a - (int16_t)value - carry;
 
     set_flag(FLAG_Z, reg, (result & 0xFF) == 0);
     set_flag(FLAG_N, reg, 1); 
     set_flag(FLAG_H, reg, (a & 0x0F) < ((value & 0x0F) + carry));
+    set_flag(FLAG_C, reg, result < 0);
+
+    return (uint8_t)result;
+}
+// Update sbc function
+uint8_t sbc(Registers* reg, uint8_t a, uint8_t value) {
+    uint8_t carry = get_flag(FLAG_C, reg) ? 1 : 0;
+    int16_t result = (int16_t)a - (int16_t)value - carry;
+
+    set_flag(FLAG_Z, reg, (result & 0xFF) == 0);
+    set_flag(FLAG_N, reg, 1);
+    
+    // Correct H-Flag Logic:
+    // H is set if bit 4 borrows from bit 5. 
+    // We can check this by seeing if the lower nibble calculation wrapped.
+    set_flag(FLAG_H, reg, ((a ^ value ^ (result & 0xFF)) & 0x10) == 0x10);
+    
     set_flag(FLAG_C, reg, result < 0);
 
     return (uint8_t)result;
@@ -214,23 +251,17 @@ void ld_uint16 (Memory* m, uint16_t operand, uint16_t value) {
 
 // push to stack
 void push(Registers* reg, Memory* m, uint16_t value) {
-   reg->SP--;
-	write8(m, reg->SP, (value >> 8) & 0xFF);
-
-   reg->SP--;
-	write8(m, reg->SP, value & 0xFF);
+	reg->SP-=2;
+	write16(m, reg->SP, value);
 }
 
 
 // pop from stack
 uint16_t pop(Registers* reg, Memory* m) {
-    uint8_t low = read8(m, reg->SP);
-   reg->SP++;
-
-    uint8_t high = read8(m, reg->SP);
-   reg->SP++;
-
-    return ((uint16_t)high << 8) | low;
+	
+	uint16_t value = read16(m, reg->SP);
+	reg->SP+=2;
+    return value;
 }
 
 // reset
@@ -622,7 +653,16 @@ void ld_hlp_h(Memory* m, Registers* reg) {write8(m,reg->HL,reg->H);}
 // 0x75
 void ld_hlp_l(Memory* m, Registers* reg) {write8(m,reg->HL,reg->L);}
 // 0x76
-void halt(Registers* reg) {reg->halted = 1;}
+//void halt(Registers* reg) {reg->halted = 1;}
+void halt(Memory* m, Registers* reg) {
+    reg->halted = 1;
+    
+    // Implementation of the "HALT Bug"
+    if (reg->IME == 0 && (read8(m, 0xFFFF) & read8(m, 0xFF0F) & 0x1F)) {
+        reg->halted = 0;
+        reg->halt_bug = 1;
+    }
+}
 // 0x77
 void ld_hlp_a(Memory* m, Registers* reg) {write8(m,reg->HL,reg->A);}
 // 0x78
@@ -950,14 +990,15 @@ void add_sp_x(Registers* reg, uint8_t operand) {
 	// need to set flags to carry bits from low byte
 	
     int8_t offset = (int8_t)operand;
+	uint16_t check = (uint16_t)operand;
 
     uint16_t sp = reg->SP;
     uint16_t result = sp + offset;
 
     set_flag(FLAG_Z, reg, 0);
     set_flag(FLAG_N, reg, 0);
-    set_flag(FLAG_H, reg, ((sp & 0x0F) + (offset & 0x0F)) > 0x0F);
-	set_flag(FLAG_C, reg, ((sp & 0xFF) + (offset & 0xFF)) > 0xFF);
+    set_flag(FLAG_H, reg, ((sp & 0x0F) + (check & 0x0F)) > 0x0F);
+	set_flag(FLAG_C, reg, ((sp & 0xFF) + (check & 0xFF)) > 0xFF);
 
    reg->SP = result;
 }
@@ -992,14 +1033,15 @@ void ld_hl_sp_x(Registers* reg, uint8_t operand) {
 	// carries similarly to 0xE8
 	
     int8_t offset = (int8_t)operand;
+	uint16_t check = (uint16_t)operand;
 
     uint16_t sp = reg->SP;
     uint16_t result = sp + offset;
 
     set_flag(FLAG_Z, reg, 0);
     set_flag(FLAG_N, reg, 0);
-    set_flag(FLAG_H, reg, ((sp & 0x0F) + (offset & 0x0F)) > 0x0F);
-    set_flag(FLAG_C, reg, ((sp & 0xFF) + (offset & 0xFF)) > 0xFF);
+    set_flag(FLAG_H, reg, ((sp & 0x0F) + (check & 0x0F)) > 0x0F);
+    set_flag(FLAG_C, reg, ((sp & 0xFF) + (check & 0xFF)) > 0xFF);
 
    reg->HL = result;
 }
@@ -1008,7 +1050,7 @@ void ld_sp_hl(Registers* reg) {reg->SP = reg->HL;}
 // 0xFA
 void ld_a_xp(Registers* reg, Memory* m, uint16_t operand) {reg->A = read8(m, operand);}
 // 0xFB
-void ei(Registers* reg) {reg->IME_delay = 2;}
+void ei(Registers* reg) {reg->IME_delay = 2; }
 // 0xFE
 void cp_x(Registers* reg, uint8_t operand) {cpu_cp(reg,operand);}
 // 0xFF
@@ -1016,36 +1058,36 @@ void rst_38(Registers* reg, Memory* m) { rst(reg, m, 0x38); }
 
 void cpu_init(Registers* reg) {
 	
-	reg->BC = 0;
-	reg->DE = 0;
-	reg->HL = 0;
-	reg->AF = 0;
+	reg->BC = 0x0013;
+	reg->DE = 0x00D8;
+	reg->HL = 0x014D;
+	reg->AF = 0x01B0;
 	reg->PC = 0;
 	reg->SP = 0xFFFE; // stack starts at top of memory
+	
 	reg->IME = 0;
 	reg->IME_delay = 0;
 	reg->halted = 0;
 	
 }
 
+int interrupt_pending(Memory* m) {
+	return read8(m, 0xFF0F) & read8(m, 0xFFFF) & 0x1F;
+}
+
 void service_interrupt(Registers* reg, Memory* m) {
+	
+	if (!reg->IME) return;
 
     uint8_t ie = read8(m, 0xFFFF);
     uint8_t iflag = read8(m, 0xFF0F);
-    uint8_t pending = ie & iflag;
 
-    if (!pending) return;
+    if (!interrupt_pending(m)) return;
 
     for (int i = 0; i < 5; i++) {
-        if (pending & (1 << i)) {
+        if (interrupt_pending(m) & (1 << i)) {
+			printf("%d",i);
 			reg->IME = 0;
-			
-            // check if interrupt was cancelled
-            ie = read8(m, 0xFFFF);
-            iflag = read8(m, 0xFF0F);
-			if (!(ie & iflag & (1 << i))) {
-                return;
-            }
 			
             write8(m, 0xFF0F, iflag & ~(1 << i));
             push(reg, m, reg->PC); 
@@ -1059,10 +1101,8 @@ int cpu_step(Memory* m, Registers* reg){
 
 // step 1: handle halt and interrupts
 	
-	if (reg->halted) {
-		uint8_t pending = read8(m, 0xFF0F) & read8(m, 0xFFFF) & 0x1F;
-        
-        if (pending) {
+	if (reg->halted) {        
+        if (interrupt_pending(m)) {
            reg->halted = 0; 
         } else {
             return 4; 
@@ -1070,11 +1110,8 @@ int cpu_step(Memory* m, Registers* reg){
     }
 	// interrupt handling
 	if (reg->IME) {
-		
-		uint8_t pending = read8(m, 0xFF0F) & read8(m, 0xFFFF) & 0x1F;
-		
-		if (pending) { // only calculate pending if IME is on
-			if (SHOW_IME) printf("[CPU] INTERRUPT\n");
+		if (interrupt_pending(m)) { // only calculate pending if IME is on
+			printf("[CPU] INTERRUPT\n");
 			int c = 20;
 			if (reg->halted) {
 				reg->halted = 0;
@@ -1090,6 +1127,12 @@ int cpu_step(Memory* m, Registers* reg){
 	uint16_t reg_pc = reg->PC; // backup of PC to detect jumps
 
 	uint8_t opcode = read8(m, reg->PC);
+
+	if (reg->halt_bug) { // pc not incremented with halt bug
+        reg->PC--;
+        reg->halt_bug = 0;
+    }
+
 	uint8_t operand_x = read8(m, reg->PC + 1);
 	//uint16_t operand_xx = read8(m, reg->PC + 1) + (read8(m, reg->PC + 2) << 8);
 	uint16_t operand_xx = read16(m, reg->PC + 1);
@@ -1237,7 +1280,7 @@ int cpu_step(Memory* m, Registers* reg){
 		case (0x73):ld_hlp_e(m,reg); break; // 0x73
 		case (0x74):ld_hlp_h(m,reg); break; // 0x74
 		case (0x75):ld_hlp_l(m,reg); break; // 0x75
-		case (0x76):halt(reg); break; // 0x76
+		case (0x76):halt(m,reg); break; // 0x76
 		case (0x77):ld_hlp_a(m,reg); break; // 0x77
 		case (0x78):ld_a_b(reg); break; // 0x78
 		case (0x79):ld_a_c(reg); break; // 0x79
@@ -1414,8 +1457,8 @@ int cpu_step(Memory* m, Registers* reg){
 		case 0xD8:
 		case 0xC9: 
 		case 0xD9: 
-		case 0x76: 
-		case 0x10: 
+		//case 0x76: 
+		//case 0x10: 
 
 			break;
 

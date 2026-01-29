@@ -2,6 +2,7 @@
 /build/*.o
 *.exe
 *.gb
+*.sav
 
 # include mooneye test roms
 !test/**/*.gb

@@ -1,4 +1,6 @@
+#include "debug.h"
 #include "window.h"
+
 #include <SDL2/SDL.h>
 
 static SDL_Window*   window   = NULL;
@@ -11,7 +13,7 @@ int window_init(char* file) {
         return 0;
 	
 	char title[256];
-	snprintf(title, sizeof(title), "currall/gb - %s", file);
+	snprintf(title, sizeof(title), "gb - %s", file);
 
     window = SDL_CreateWindow(
         title,
@@ -45,25 +47,70 @@ void window_update(uint32_t* framebuffer) {
     SDL_RenderPresent(renderer);
 }
 
-void check_events(int* running, int* paused, int* vram_viewer){	
+void check_events(Status* s){	
 
 	/*
-	KEYBINDS
+	=== KEYBINDS ===
 	
+	CONTROLS
+	w: up dpad
+	a: left dpad
+	s: down dpad
+	d: right dpad
+	,: b
+	.: a
+	enter: start
+	backspace: select
+	
+	EMULATION
 	p: toggle pause
 	v: toggle vram viewer
+	
+	LOGGING
+	l: enable logging every frame
+	m: print memory to console
+	right shift: logging every instruction (VERY SLOW)
+	
+	SPEED
+	-: slow down emulation
+	+: speed up emulation
+	
 	*/
 
 	SDL_Event e;
 	while (SDL_PollEvent(&e)) {
 		if (e.type == SDL_WINDOWEVENT && e.window.event == SDL_WINDOWEVENT_CLOSE) {
 			window_destroy();
-			*paused = 0;
-			*running = 0;
+			s->paused = 0;
+			s->running = 0;
 		}
 		if (e.type == SDL_KEYDOWN) {
-			if (e.key.keysym.sym == SDLK_p && !e.key.repeat) *paused = !*paused;
-			if (e.key.keysym.sym == SDLK_v && !e.key.repeat) *vram_viewer = !*vram_viewer;
+			// controls
+			if (e.key.keysym.sym == SDLK_w); 
+			if (e.key.keysym.sym == SDLK_a); 
+			if (e.key.keysym.sym == SDLK_s); 
+			if (e.key.keysym.sym == SDLK_d); 
+			if (e.key.keysym.sym == SDLK_COMMA); 
+			if (e.key.keysym.sym == SDLK_PERIOD); 
+			if (e.key.keysym.sym == SDLK_RETURN); 
+			if (e.key.keysym.sym == SDLK_BACKSPACE); 
+			// emulation
+			if (e.key.keysym.sym == SDLK_p && !e.key.repeat) 
+				s->paused = !s->paused;
+			if (e.key.keysym.sym == SDLK_v && !e.key.repeat) 
+				s->show_vram_viewer = !s->show_vram_viewer;
+			// logging
+			if (e.key.keysym.sym == SDLK_l && !e.key.repeat){
+				if(!s->print_frame) print_table_header(s); 
+				s->print_frame = !s->print_frame;}
+			if (e.key.keysym.sym == SDLK_m && !e.key.repeat) 
+				s->print_memory = 1;
+			if (e.key.keysym.sym == SDLK_RSHIFT) 
+				s->print_cycle = 1;
+		}
+		if (e.type == SDL_KEYUP) { // for held keys, not toggled keys
+			if (e.key.keysym.sym == SDLK_RSHIFT) 
+				s->print_cycle = 0; // only print on hold, do not toggle
 		}
 		
 	}

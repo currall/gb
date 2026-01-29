@@ -59,11 +59,43 @@ void mem_init(Memory* m) {
 
     // --- Boot ROM ---
     m->boot_rom_enabled = 1;
+	
+	// --- DIV ---
+	m->div_counter = 0;
+	m->tima = 0;
+	
+	// --- DMA ---
+	m->dma_active = 0;
+	m->dma_pending = 0;
+	m->dma_source = 0;
+	m->dma_index = 0;
+	m->dma_cycles_left = 0;
 
+}
+
+int dma_blocks2(Memory* m, uint16_t addr) {
+    if (!m->dma_active) return 0;
+    if (addr >= 0xFF00) return 0;
+    return 1;
+}
+
+int dma_blocks(Memory* m, uint16_t addr) {
+    if (!m->dma_active) return 0;
+
+    // Only OAM blocked
+    if (addr >= 0xFE00 && addr <= 0xFE9F)
+        return 1;
+
+    // CPU cannot access most memory, but VRAM is STILL accessible
+    // during OAM DMA on DMG.
+
+    return 0;
 }
 
 void write8(Memory* m, uint16_t addr, uint8_t value) {
 		
+	if (addr == 0xFF01) printf("[SERIAL] %c\n", value); // serial output
+	
 	if (addr == 0xFF04) {
 		m->div_counter = 0;
 		m->memory[0xFF04] = 0;
@@ -76,17 +108,13 @@ void write8(Memory* m, uint16_t addr, uint8_t value) {
 	}
 	
 	if (addr == 0xFF40) {
-		uint8_t old = m->memory[0xFF40];
 		m->memory[0xFF40] = value;
-
-		// LCD turned OFF (bit 7: 1 -> 0)
-		if ((old & 0x80) && !(value & 0x80)) {
-			memset(&m->memory[0x8000], 0, 0x2000); // VRAM clear
-			// optional but correct:
-			memset(&m->memory[0xFE00], 0, 0xA0);   // OAM clear
-		}
-
 		return;
+	}
+	
+	if (addr == 0xFF46) { // DMA
+		m->dma_pending = 0;
+		m->dma_source = value << 8;
 	}
 	
     if (addr == 0xFF50 && value != 0 && m->boot_rom_enabled) {
@@ -109,7 +137,9 @@ void write8(Memory* m, uint16_t addr, uint8_t value) {
 		//printf("[MEMORY] ILLEGAL MEMORY WRITE\n");
 		return;
 	}
-	
+	if (dma_blocks(m, addr)) {
+        return;
+    }
     m->memory[addr] = value;
 }
 
@@ -118,9 +148,18 @@ void write16(Memory* m, uint16_t addr, uint16_t value) {
     write8(m, addr+1, (value & 0xFF00) >> 8);
 }
 
+uint8_t raw_read(Memory *m, uint16_t addr) {
+    // echo ram
+    if (addr >= 0xE000 && addr <= 0xFDFF)
+        addr -= 0x2000;
+
+    return m->memory[addr];
+}
+
 uint8_t read8(Memory* m, uint16_t addr) {
 	
 	// read rules
+	if (addr == 0xFF00) return 0xCF;
 	if (addr == 0xFF03) return 0xFF;
 	if (addr >= 0xFF08 && addr <= 0xFF0E) return 0xFF;
 	if (addr == 0xFF15) return 0xFF;
@@ -139,10 +178,13 @@ uint8_t read8(Memory* m, uint16_t addr) {
 			return 0;
 	}
 
+	if (dma_blocks(m, addr)) {
+        return 0xFF;
+    }
     if (m->boot_rom_enabled && addr < 0x0100) {
         return m->boot_rom[addr];
     }
-    return m->memory[addr];
+    return raw_read(m, addr);
 	
 }
 

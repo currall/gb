@@ -15,6 +15,7 @@ typedef struct {
 	uint8_t 	IME;
 	uint8_t		IME_delay;
 	uint8_t		halted;
+	uint8_t		halt_bug;
 
 } Registers;
 

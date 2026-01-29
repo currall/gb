@@ -2,6 +2,8 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
+#include "debug.h"
+
 #include <stdint.h>
 
 #define GB_WIDTH  160
@@ -9,7 +11,7 @@
 
 int  window_init(char* file);
 void window_update(uint32_t* framebuffer);
-void check_events(int* running, int* paused, int* vram_viewer);
+void check_events(Status* s);
 void window_destroy(void);
 void pause_framebuffer(uint32_t* framebuffer);
 

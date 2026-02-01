@@ -179,7 +179,18 @@ void draw_fg(int scanline, uint32_t* framebuffer, Memory* m) {
 }
 
 void ppu_step(PPU* ppu, Memory* m) {
-	
+
+	uint8_t lcdc = read8(m, LCDC);
+    
+    if (!(lcdc & 0x80)) { // lcd enable
+        ppu->scanline = 0;
+        ppu->dot = 0;
+        ppu->mode = MODE_HBLANK;
+        write8(m, LY, 0); // set scanline to 0
+        uint8_t stat = read8(m, STAT);
+        write8(m, STAT, stat & 0xFC); 
+        return;
+    }
 	
     ppu->dot ++;
 	

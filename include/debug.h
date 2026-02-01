@@ -17,6 +17,8 @@ typedef struct {
 	int print_cycle; // print debug info every instruction
 	int print_frame; // print debug info every frame
 	int print_memory;// print memory next cycle
+
+	int advance_frame; // jump to next frame
 	
 	// define what information should be shown in debug outputs
 	// on pause, logging mode, etc.

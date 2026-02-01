@@ -11,6 +11,8 @@ void status_init(Status* s) {
 
 	s->running = 1;
 	s->paused = 0;
+	s->advance_frame = 0;
+
 	s->print_cycle = 0;
 	s->print_frame = 0;
 	s->print_memory = 0;

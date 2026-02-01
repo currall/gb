@@ -82,19 +82,15 @@ int dma_blocks2(Memory* m, uint16_t addr) {
 int dma_blocks(Memory* m, uint16_t addr) {
     if (!m->dma_active) return 0;
 
-    // Only OAM blocked
-    if (addr >= 0xFE00 && addr <= 0xFE9F)
-        return 1;
-
-    // CPU cannot access most memory, but VRAM is STILL accessible
-    // during OAM DMA on DMG.
+    // only block oam writes
+    if (addr >= 0xFE00 && addr <= 0xFE9F) return 1;
 
     return 0;
 }
 
 void write8(Memory* m, uint16_t addr, uint8_t value) {
 		
-	if (addr == 0xFF01) printf("[SERIAL] %c\n", value); // serial output
+	//if (addr == 0xFF01) printf("[SERIAL] %c\n", value); // serial output
 	
 	if (addr == 0xFF04) {
 		m->div_counter = 0;
@@ -113,7 +109,7 @@ void write8(Memory* m, uint16_t addr, uint8_t value) {
 	}
 	
 	if (addr == 0xFF46) { // DMA
-		m->dma_pending = 0;
+		m->dma_pending = 1;
 		m->dma_source = value << 8;
 	}
 	
@@ -124,7 +120,7 @@ void write8(Memory* m, uint16_t addr, uint8_t value) {
 			if (m->memory[i] != m->rom[i]) {
 				printf("[ROM] ROM CORRUPTION at %04X: %02X -> %02X\n",
 					   i, m->rom[i], m->memory[i]);
-				break;
+				//break;
 			}
 		}
 		
@@ -136,7 +132,7 @@ void write8(Memory* m, uint16_t addr, uint8_t value) {
 	if (addr < 0x8000) {
 		//printf("[MEMORY] ILLEGAL MEMORY WRITE\n");
 		return;
-	}
+	} 
 	if (dma_blocks(m, addr)) {
         return;
     }

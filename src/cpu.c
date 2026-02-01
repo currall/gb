@@ -15,6 +15,7 @@ number of bytes following the opcode to be used as operands
 invalid instructions given value of 0 so they are just skipped
 
 source: https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html
+note: this source contains incorrect operand byte length for instructions 0xE2 and 0xF2
 */
 int old_operand_lengths[256] = {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
@@ -167,18 +168,6 @@ uint8_t adc(Registers* reg, uint8_t a, uint8_t value) {
 }
 
 // 8-bit subtract with carry
-uint8_t sbc2(Registers* reg, uint8_t a, uint8_t value) {
-    uint8_t carry = get_flag(FLAG_C, reg) ? 1 : 0;
-    int16_t result = (int16_t)a - (int16_t)value - carry;
-
-    set_flag(FLAG_Z, reg, (result & 0xFF) == 0);
-    set_flag(FLAG_N, reg, 1); 
-    set_flag(FLAG_H, reg, (a & 0x0F) < ((value & 0x0F) + carry));
-    set_flag(FLAG_C, reg, result < 0);
-
-    return (uint8_t)result;
-}
-// Update sbc function
 uint8_t sbc(Registers* reg, uint8_t a, uint8_t value) {
     uint8_t carry = get_flag(FLAG_C, reg) ? 1 : 0;
     int16_t result = (int16_t)a - (int16_t)value - carry;
@@ -186,11 +175,8 @@ uint8_t sbc(Registers* reg, uint8_t a, uint8_t value) {
     set_flag(FLAG_Z, reg, (result & 0xFF) == 0);
     set_flag(FLAG_N, reg, 1);
     
-    // Correct H-Flag Logic:
-    // H is set if bit 4 borrows from bit 5. 
-    // We can check this by seeing if the lower nibble calculation wrapped.
+    // h set if bit 4 borrows from bit 5
     set_flag(FLAG_H, reg, ((a ^ value ^ (result & 0xFF)) & 0x10) == 0x10);
-    
     set_flag(FLAG_C, reg, result < 0);
 
     return (uint8_t)result;
@@ -266,8 +252,8 @@ uint16_t pop(Registers* reg, Memory* m) {
 
 // reset
 void rst(Registers* reg, Memory* m, uint16_t value) {
-    push(reg, m, reg->PC);
-   reg->PC = value;
+    push(reg, m, reg->PC+1);
+   	reg->PC = value;
 }
 
 // -- instructions --
@@ -404,7 +390,6 @@ void jr_nz_x(Registers* reg, uint8_t operand, int* cycles) {
 	if (!get_flag(FLAG_Z, reg)) {	
 		reg->PC += 2+(int8_t)operand; 
 		*cycles += 4; }
-	else {reg->PC += 2;}
 }
 // 0x21
 void ld_hl_xx(Registers* reg,uint16_t operand) {reg->HL = operand;}
@@ -456,7 +441,6 @@ void jr_z_x(Registers* reg, uint8_t operand, int* cycles) {
 	if (get_flag(FLAG_Z, reg)) {	
 		reg->PC += 2+(int8_t)operand; 
 		*cycles += 4; }
-	else {reg->PC += 2;}
 }
 // 0x29
 void add_hl_hl(Registers* reg) {reg->HL = add16(reg, reg->HL, reg->HL);}
@@ -487,7 +471,6 @@ void jr_nc_x(Registers* reg, uint8_t operand, int* cycles) {
 	if (!get_flag(FLAG_C, reg)) {	
 		reg->PC += 2+(int8_t)operand; 
 		*cycles += 4; }
-	else {reg->PC += 2;}
 }
 // 0x31
 void ld_sp_xx(Registers* reg, uint16_t operand) {reg->SP = operand;}
@@ -512,7 +495,6 @@ void jr_c_x(Registers* reg, uint8_t operand, int* cycles) {
 	if (get_flag(FLAG_C, reg)) {	
 		reg->PC += 2+(int8_t)operand; 
 		*cycles += 4; }
-	else {reg->PC += 2;}
 }
 // 0x39
 void add_hl_sp(Registers* reg) {reg->HL = add16(reg, reg->HL, reg->SP);}
@@ -840,7 +822,6 @@ void jp_nz_xx(Registers* reg, uint16_t operand, int* cycles) {
        reg->PC = operand;
         *cycles += 4;
     }
-	else {reg->PC += 3;}
 }
 // 0xC3
 void jp_xx(Registers* reg, Memory* m, uint16_t operand) {reg->PC = operand;}
@@ -851,7 +832,6 @@ void call_nz_xx(Registers* reg, Memory* m, uint16_t operand, int* cycles) {
        reg->PC = operand;
         *cycles += 12;
     }
-	else {reg->PC += 3;}
 }
 // 0xC5
 void push_bc(Registers* reg, Memory* m) {push(reg, m, reg->BC);}
@@ -865,14 +845,12 @@ void ret_z(Registers* reg, Memory* m, int* cycles) {
        reg->PC = pop(reg, m);
         *cycles += 12;
     }
-	else {reg->PC += 1;}
 }
 // 0xC9
 void ret(Registers* reg, Memory* m) {reg->PC = pop(reg, m);}
 // 0xCA
 void jp_z_xx(Registers* reg, uint16_t operand) {
 	if (get_flag(FLAG_Z, reg)) reg->PC = operand;
-	else {reg->PC += 3;}
 }
 
 // 0xCB
@@ -891,12 +869,11 @@ void call_z_xx(Registers* reg, Memory* m, uint16_t operand, int* cycles) {
        reg->PC = operand;
         *cycles += 12;
     }
-	else {reg->PC += 3;}
 }
 // 0xCD
 void call_xx(Registers* reg, Memory* m, uint16_t operand) {
-    push(reg, m, reg->PC+3);
-   reg->PC = operand;
+	push(reg, m, reg->PC+3);
+	reg->PC = operand;
 }
 // 0xCE
 void adc_a_x(Registers* reg, uint8_t operand) {reg->A = adc(reg, reg->A, operand);}
@@ -911,7 +888,6 @@ void ret_nc(Registers* reg, Memory* m, int* cycles) {
        reg->PC = pop(reg, m);
         *cycles += 12;
     }
-	else {reg->PC += 1;}
 }
 // 0xD1
 void pop_de(Registers* reg, Memory* m) {reg->DE = pop(reg, m);}
@@ -921,7 +897,6 @@ void jp_nc_xx(Registers* reg, uint16_t operand, int* cycles) {
        reg->PC = operand;
         *cycles += 4;
     }
-	else {reg->PC += 3;}
 }
 // 0xD4
 void call_nc_xx(Registers* reg, Memory* m, uint16_t operand, int* cycles) {
@@ -930,7 +905,6 @@ void call_nc_xx(Registers* reg, Memory* m, uint16_t operand, int* cycles) {
        reg->PC = operand;
         *cycles += 12;
     }
-	else {reg->PC += 3;}
 }
 // 0xD5
 void push_de(Registers* reg, Memory* m) {push(reg, m, reg->DE);}
@@ -944,7 +918,6 @@ void ret_c(Registers* reg, Memory* m, int* cycles) {
        reg->PC = pop(reg, m);
         *cycles += 12;
     }
-	else {reg->PC += 1;}
 }
 // 0xD9
 void reti(Registers* reg, Memory* m) {
@@ -954,7 +927,6 @@ void reti(Registers* reg, Memory* m) {
 // 0xDA
 void jp_c_xx(Registers* reg, uint16_t operand) {
 	if (get_flag(FLAG_C, reg)) reg->PC = operand;
-	else {reg->PC += 3;}
 }
 // 0xDC
 void call_c_xx(Registers* reg, Memory* m, uint16_t operand, int* cycles) {
@@ -963,7 +935,6 @@ void call_c_xx(Registers* reg, Memory* m, uint16_t operand, int* cycles) {
        reg->PC = operand;
         *cycles += 12;
     }
-	else {reg->PC += 3;}
 }
 // 0xDE
 void sbc_a_x(Registers* reg, uint8_t operand) {reg->A = sbc(reg, reg->A, operand);}
@@ -1086,7 +1057,7 @@ void service_interrupt(Registers* reg, Memory* m) {
 
     for (int i = 0; i < 5; i++) {
         if (interrupt_pending(m) & (1 << i)) {
-			printf("%d",i);
+			//printf("%d",i);
 			reg->IME = 0;
 			
             write8(m, 0xFF0F, iflag & ~(1 << i));
@@ -1111,7 +1082,7 @@ int cpu_step(Memory* m, Registers* reg){
 	// interrupt handling
 	if (reg->IME) {
 		if (interrupt_pending(m)) { // only calculate pending if IME is on
-			printf("[CPU] INTERRUPT\n");
+			//printf("[CPU] INTERRUPT\n");
 			int c = 20;
 			if (reg->halted) {
 				reg->halted = 0;
@@ -1429,11 +1400,11 @@ int cpu_step(Memory* m, Registers* reg){
 	}
 
 // step 4: increment PC, next instruction
-	/*
+	
 	if (reg->PC == reg_pc)
 		reg->PC += operand_lengths[opcode]+1;
-	*/
-	switch (opcode) {
+	
+	/* switch (opcode) {
 
 		case 0x18: 
 		case 0x20:
@@ -1465,7 +1436,7 @@ int cpu_step(Memory* m, Registers* reg){
 		default:
 			reg->PC += operand_lengths[opcode] + 1;
 			break;
-	}
+	} */
 
 // step 5: handle interrupt delay
 	if (reg->IME_delay > 0) {

@@ -47,7 +47,7 @@ void window_update(uint32_t* framebuffer) {
     SDL_RenderPresent(renderer);
 }
 
-void check_events(Status* s){	
+void check_events(Status* s, Memory* m){	
 
 	/*
 	=== KEYBINDS ===
@@ -63,6 +63,7 @@ void check_events(Status* s){
 	backspace: select
 	
 	EMULATION
+	n: advance to next frame
 	p: toggle pause
 	v: toggle vram viewer
 	
@@ -77,6 +78,8 @@ void check_events(Status* s){
 	
 	*/
 
+	uint8_t input = 0x3F;
+
 	SDL_Event e;
 	while (SDL_PollEvent(&e)) {
 		if (e.type == SDL_WINDOWEVENT && e.window.event == SDL_WINDOWEVENT_CLOSE) {
@@ -86,15 +89,19 @@ void check_events(Status* s){
 		}
 		if (e.type == SDL_KEYDOWN) {
 			// controls
-			if (e.key.keysym.sym == SDLK_w); 
-			if (e.key.keysym.sym == SDLK_a); 
-			if (e.key.keysym.sym == SDLK_s); 
-			if (e.key.keysym.sym == SDLK_d); 
-			if (e.key.keysym.sym == SDLK_COMMA); 
-			if (e.key.keysym.sym == SDLK_PERIOD); 
-			if (e.key.keysym.sym == SDLK_RETURN); 
-			if (e.key.keysym.sym == SDLK_BACKSPACE); 
+			if (e.key.keysym.sym == SDLK_w)        	input   &= 0b00011011; // Up
+			if (e.key.keysym.sym == SDLK_a)        	input   &= 0b00011101; // Left
+			if (e.key.keysym.sym == SDLK_s)        	input   &= 0b00010111; // Down
+			if (e.key.keysym.sym == SDLK_d)        	input   &= 0b00011110; // Right
+
+			if (e.key.keysym.sym == SDLK_COMMA)    	input 	&= 0b00101101; // B
+			if (e.key.keysym.sym == SDLK_PERIOD)   	input 	&= 0b00101110; // A
+			if (e.key.keysym.sym == SDLK_RETURN)   	input 	&= 0b00100111; // Start
+			if (e.key.keysym.sym == SDLK_BACKSPACE)	input 	&= 0b00101011; // Select
+
 			// emulation
+			if (e.key.keysym.sym == SDLK_n && !e.key.repeat){
+				s->advance_frame = 1; s->paused = 0;}
 			if (e.key.keysym.sym == SDLK_p && !e.key.repeat) 
 				s->paused = !s->paused;
 			if (e.key.keysym.sym == SDLK_v && !e.key.repeat) 
@@ -109,10 +116,28 @@ void check_events(Status* s){
 				s->print_cycle = 1;
 		}
 		if (e.type == SDL_KEYUP) { // for held keys, not toggled keys
+			//controls
+			if (e.key.keysym.sym == SDLK_w)        	input   |= 0b00011011; // Up
+			if (e.key.keysym.sym == SDLK_a)        	input   |= 0b00011101; // Left
+			if (e.key.keysym.sym == SDLK_s)        	input   |= 0b00010111; // Down
+			if (e.key.keysym.sym == SDLK_d)        	input   |= 0b00011110; // Right
+
+			if (e.key.keysym.sym == SDLK_COMMA)    	input 	|= 0b00101101; // B
+			if (e.key.keysym.sym == SDLK_PERIOD)   	input 	|= 0b00101110; // A
+			if (e.key.keysym.sym == SDLK_RETURN)   	input 	|= 0b00100111; // Start
+			if (e.key.keysym.sym == SDLK_BACKSPACE)	input 	|= 0b00101011; // Select
+
+			//logging
 			if (e.key.keysym.sym == SDLK_RSHIFT) 
 				s->print_cycle = 0; // only print on hold, do not toggle
 		}
 		
+	}
+
+	m->memory[0xFF00] = input;
+	if (input != 0x3F) { // call joypad interrupt
+		uint8_t iflags = read8(m, 0xFF0F);
+		write8(m, 0xFF0F, iflags | 0x10);
 	}
 }
 

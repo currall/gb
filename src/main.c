@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
 	Registers reg; // cpu registers
 	PPU ppu; // pixel processing unit (gpu)
 	Memory m = {0}; // memory
-	Status s;
+	Status s = {0}; // debug emualtor status
 	
 	// legacy memory declarations
 	uint8_t boot_rom[0x100] = {0};
@@ -57,6 +57,7 @@ int main(int argc, char *argv[]) {
 	int frame_tracker = 0; // counts cycles passed until 1 frame
 	int second_tracker = 0; // counts cycles passed until 1 second
 	uint64_t total_cycles = 0;
+	uint16_t total_seconds = 0;
 	
 	// debug output
     print_header(h);
@@ -96,9 +97,10 @@ int main(int argc, char *argv[]) {
 			dma_step(&m);
 			ppu_step(&ppu,&m);
 			timer_step(&m);
-			if (ppu_frame_ready(&ppu)) 
+			if (ppu_frame_ready(&ppu)) {
 				window_update(ppu_get_framebuffer(&ppu));
 				ppu.frame_ready = 0;
+			}
 		}
 		
 		// graphics (ppu)
@@ -107,7 +109,7 @@ int main(int argc, char *argv[]) {
 		// update display			
 		
 		
-		check_events(&s);
+		check_events(&s,&m);
 		
 		// pause
 		if (s.paused) {
@@ -117,7 +119,7 @@ int main(int argc, char *argv[]) {
 			pause_framebuffer(ppu_get_framebuffer(&ppu));
 			window_update(ppu_get_framebuffer(&ppu));
 			while(s.paused) {
-				check_events(&s);
+				check_events(&s,&m);
 				if (s.print_memory) {print_memory(&m); s.print_memory=0;};
 			}
 		}
@@ -125,10 +127,9 @@ int main(int argc, char *argv[]) {
 		// end timer
 		
 		if (frame_tracker > (CPU_HZ / 60)) {
-			if (s.print_frame) print_cycle(&reg,&m,instruction_count,total_cycles,&s);
-			
-			if (s.show_vram_viewer) vram_window_update(&m);
-			else vram_window_hide();
+			if (s.print_frame) print_cycle(&reg,&m,instruction_count,total_cycles,&s); // print cycle
+			if (s.show_vram_viewer) vram_window_update(&m); else vram_window_hide(); // vram window
+			if (s.advance_frame) {s.paused=1;s.advance_frame=0;} // frame stepping
 			
 			while ((double)(clock() - frame_start) / CLOCKS_PER_SEC < s.frame_time) {
 				// do nothing until frame time has passed
@@ -139,7 +140,8 @@ int main(int argc, char *argv[]) {
 			
 			// check if 1 second has passed
 			if (second_tracker > CPU_HZ){
-				if (PRINT_DEBUG) printf("[TIME] 1 second passed\n");
+				total_seconds++;
+				if (PRINT_DEBUG) printf("[TIME] %d seconds passed\n", total_seconds);
 				second_tracker = 0;
 			}
 		}

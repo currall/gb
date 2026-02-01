@@ -11,7 +11,7 @@
 
 int  window_init(char* file);
 void window_update(uint32_t* framebuffer);
-void check_events(Status* s);
+void check_events(Status* s, Memory* m);
 void window_destroy(void);
 void pause_framebuffer(uint32_t* framebuffer);
 

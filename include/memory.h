@@ -4,6 +4,12 @@
 
 #include <stdint.h>
 
+typedef struct {
+
+	uint8_t dpad; 	 // right left up down
+	uint8_t buttons; // a b select start
+
+} Joypad;
 
 typedef struct {
 	
@@ -23,6 +29,9 @@ typedef struct {
 	uint16_t dma_source;
 	uint16_t dma_index;
 	int dma_cycles_left;
+
+	// input
+	Joypad j;
 	
 } Memory;
 

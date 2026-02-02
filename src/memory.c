@@ -9,6 +9,8 @@ void mem_init(Memory* m) {
 	
 	// --- Joypad ---
     m->memory[0xFF00] = 0xCF;
+    m->j.dpad = 0x0F;
+    m->j.buttons = 0x0F;
 
     // --- Timer ---
     m->memory[0xFF04] = 0x00; // DIV
@@ -89,6 +91,10 @@ int dma_blocks(Memory* m, uint16_t addr) {
 }
 
 void write8(Memory* m, uint16_t addr, uint8_t value) {
+    
+    if (addr == 0xFF00) { // input
+        m->memory[0xFF00] = (m->memory[0xFF00] & 0xCF) | (value & 0x30);
+    }
 		
 	//if (addr == 0xFF01) printf("[SERIAL] %c\n", value); // serial output
 	
@@ -155,7 +161,7 @@ uint8_t raw_read(Memory *m, uint16_t addr) {
 uint8_t read8(Memory* m, uint16_t addr) {
 	
 	// read rules
-	if (addr == 0xFF00) return 0xCF;
+	//if (addr == 0xFF00) return 0xCF; // block input
 	if (addr == 0xFF03) return 0xFF;
 	if (addr >= 0xFF08 && addr <= 0xFF0E) return 0xFF;
 	if (addr == 0xFF15) return 0xFF;
@@ -163,16 +169,29 @@ uint8_t read8(Memory* m, uint16_t addr) {
 	if (addr >= 0xFF27 && addr <= 0xFF2F) return 0xFF;
 	if (addr >= 0xFF4C && addr <= 0xFF7F) return 0xFF;
 
-	if (addr == 0xFF00) return (m->memory[0xFF00] & 0x30) | 0xCF;
+	//if (addr == 0xFF00) return (m->memory[0xFF00] & 0x30) | 0xCF;
 	if (addr == 0xFF04) return m->div_counter >> 8;
 	if (addr == 0xFF07) return m->memory[0xFF07] | 0xF8;
 	if (addr == 0xFF0F) return m->memory[0xFF0F] | 0xE0;
 	if (addr == 0xFF26) return m->memory[0xFF26] | 0x70;
 	if (addr == 0xFF41) return m->memory[0xFF41] | 0x80;
-	if (addr == 0xFF44) { // LY
+	if (addr == 0xFF44) { // LY - scanline counter
 		if (!(m->memory[0xFF40] & 0x80))
 			return 0;
 	}
+
+    if (addr == 0xFF00) { // input
+        uint8_t select = m->memory[0xFF00] & 0x30;
+        uint8_t result = select | 0xC0 | 0x0F;
+
+        if (!(select & 0x10))
+            result &= (0xF0 | m->j.dpad);
+
+        if (!(select & 0x20))
+            result &= (0xF0 | m->j.buttons);
+
+        return result;
+    }
 
 	if (dma_blocks(m, addr)) {
         return 0xFF;

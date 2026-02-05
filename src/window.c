@@ -135,7 +135,8 @@ void check_events(Status* s, Memory* m){
 			if (e.key.keysym.sym == SDLK_m) 
 				s->print_memory = 1;
 
-		} else if (e.type == SDL_KEYDOWN) { // allow key to be held down
+		} 
+		if (e.type == SDL_KEYDOWN) { // allow key to be held down
 			if (e.key.keysym.sym == SDLK_RSHIFT) 
 				s->print_cycle = 1;
 		}

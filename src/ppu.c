@@ -141,8 +141,10 @@ void draw_fg(int scanline, uint32_t* framebuffer, Memory* m) {
 		*/
 		
 		int h = 8; // 8x8 tiles only (gb supports 8x16)
-		
-		if (scanline < y || scanline >= y + h) continue; // skip sprite if not on scanline
+
+		int tall_tile = read8(m,LCDC) & 0x04;
+		if (tall_tile) h = 16;
+        if (scanline < y || scanline >= y + h) continue; // skip sprite if not on scanline
 		sprites_drawn++;
 		
 		int line = scanline - y; // line inside tile
@@ -228,7 +230,7 @@ void ppu_step(PPU* ppu, Memory* m) {
 				write8(m, LY, ppu->scanline); // increase LY counter (scanline counter)
 				check_lyc(ppu,m);
 				
-				if (ppu->scanline == 154) {
+				if (ppu->scanline > 153) {
 					ppu->scanline = 0;
 					write8(m, LY, ppu->scanline); // reset LY
 					ppu_mode_set(ppu,m,MODE_OAM);

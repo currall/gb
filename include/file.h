@@ -2,6 +2,9 @@
 #ifndef FILE_H
 #define FILE_H
 
-int read_data(char* file, void* buf, int pos, int bytesToRead);
+#include <stdint.h>
+
+int read_file(char* file, void* buf, int pos, int bytesToRead);
+int load_rom(char* file, uint8_t** m);
 
 #endif

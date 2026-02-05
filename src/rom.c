@@ -1,21 +1,18 @@
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 #include "file.h"
-#include "header.h"
-#include "memory.h"
 
 // implement banking for larger roms here
 
-void read_ROM(char* file, Header h, uint8_t* m){
-    uint16_t ROMSizeB = 32 * 1024 * (1 << h.ROMSize); // rom size in bytes
-	uint16_t MemROMSize = 32 * 1024; // 32kb
-	
-    read_data(file, m, 0, MemROMSize); // read ROM data into RAM
+uint32_t read_rom(char* file, uint8_t** m){ // uses pointer to rom memorys pointer
+    load_rom(file, m); 
 }
 
-void read_boot_ROM(char* file, Header h, uint8_t* m){
-	read_data("dmg_boot.bin", m, 0, 256); // read Boot ROM data into RAM
+
+void read_boot_ROM(char* file, uint8_t* m){
+	read_file("dmg_boot.bin", m, 0, 256); // read Boot ROM data into RAM
 }
 
 

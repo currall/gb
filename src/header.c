@@ -7,7 +7,7 @@
 // read ROM header from ROM file
 Header read_header(char* file){
     Header h;
-    read_data(file, &h, 0x0134, sizeof(Header));
+    read_file(file, &h, 0x0134, sizeof(Header));
     return h;
 }
 

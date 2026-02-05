@@ -237,17 +237,19 @@ void ld_uint16 (Memory* m, uint16_t operand, uint16_t value) {
 
 // push to stack
 void push(Registers* reg, Memory* m, uint16_t value) {
-	reg->SP-=2;
-	write16(m, reg->SP, value);
+    reg->SP--;
+    write8(m, reg->SP, (value >> 8) & 0xFF); 
+
+    reg->SP--;
+    write8(m, reg->SP, value & 0xFF);
 }
 
 
 // pop from stack
 uint16_t pop(Registers* reg, Memory* m) {
-	
-	uint16_t value = read16(m, reg->SP);
-	reg->SP+=2;
-    return value;
+    uint8_t low  = read8(m, reg->SP++);
+    uint8_t high = read8(m, reg->SP++);
+    return (high << 8) | low;
 }
 
 // reset
@@ -642,7 +644,7 @@ void halt(Memory* m, Registers* reg) {
     // Implementation of the "HALT Bug"
     if (reg->IME == 0 && (read8(m, 0xFFFF) & read8(m, 0xFF0F) & 0x1F)) {
         reg->halted = 0;
-        reg->halt_bug = 1;
+        reg->halt_bug = 2; // halt bug on next instruction
     }
 }
 // 0x77
@@ -1039,6 +1041,7 @@ void cpu_init(Registers* reg) {
 	reg->IME = 0;
 	reg->IME_delay = 0;
 	reg->halted = 0;
+	reg->halt_bug = 0;
 	
 }
 
@@ -1057,10 +1060,10 @@ void service_interrupt(Registers* reg, Memory* m) {
 
     for (int i = 0; i < 5; i++) {
         if (interrupt_pending(m) & (1 << i)) {
-			//printf("%d",i);
+			//printf("%d",i); // print interrupt type
 			reg->IME = 0;
-			
-            write8(m, 0xFF0F, iflag & ~(1 << i));
+			m->io[0x0F] &= ~(1 << i);
+            //write8(m, 0xFF0F, iflag & ~(1 << i));
             push(reg, m, reg->PC); 
             reg->PC = 0x40 + i * 8; // jump to interrupt
             return;
@@ -1400,9 +1403,19 @@ int cpu_step(Memory* m, Registers* reg){
 	}
 
 // step 4: increment PC, next instruction
-	
-	if (reg->PC == reg_pc)
+
+	if (reg->halt_bug > 0) {
+		reg->halt_bug--;
+	} 
+
+	if (reg->halt_bug == 1) {
+		reg->halt_bug = 0;
+	} else {
+		if (reg->PC == reg_pc)
 		reg->PC += operand_lengths[opcode]+1;
+	}
+	
+	
 	
 	/* switch (opcode) {
 

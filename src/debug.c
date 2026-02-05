@@ -21,7 +21,8 @@ void status_init(Status* s) {
 	s->show_operands = 		1;
 	s->show_cpu = 			1;
 	s->show_registers = 	1;
-	s->show_ppu = 			1;
+	s->show_ppu = 			0;
+	s->show_mbc = 			1;
 	s->show_ime = 			1;
 	s->show_cycles = 		1;
 	
@@ -72,6 +73,12 @@ void print_table_header(Status* s) {
 		strcat(line3, "LCDC        | STAT        | BGP:0xFF47 | ");
 		strcat(line4, "============|=============|============|=");
 	}
+	if (s->show_mbc) {
+		strcat(line1, "==========");
+		strcat(line2, "MBC1    | ");
+		strcat(line3, "bank no | ");
+		strcat(line4, "========|=");
+	}
 	if (s->show_cycles) {
 		strcat(line1, "================");
 		strcat(line2, "total         | ");
@@ -88,15 +95,15 @@ void print_table_header(Status* s) {
 
 void print_cycle(Registers* reg, Memory* m, int instruction, uint64_t cycles, Status* s) {
 	
-	if (s->show_instruction) printf("%.9d: 0x%02x | ",instruction, m->memory[reg->PC]);
-	if (s->show_operands) printf("0x%02x | 0x%04x | ", m->memory[reg->PC+1],m->memory[reg->PC + 1] + (m->memory[reg->PC + 2] << 8));
+	if (s->show_instruction) printf("%.9d: 0x%02x | ",instruction, raw_read(m,reg->PC));
+	if (s->show_operands) printf("0x%02x | 0x%04x | ", raw_read(m,reg->PC+1),raw_read(m,reg->PC + 1) + (raw_read(m,reg->PC + 2) << 8));
 	if (s->show_cpu) printf("PC:0x%04x | SP:0x%04x | ",reg->PC, reg->SP);
 	if (s->show_ime) {printf(
 		"%-1d   | %-1d         | IF:0x%04x | IE:0x%04x | ",
 		reg->IME, 
 		reg->IME_delay,
-		m->memory[0xFF0F],
-		m->memory[0xFFFF]
+		raw_read(m,0xFF0F),
+		raw_read(m,0xFFFF)
 	);}
 	if (s->show_registers) {printf(
 		"AF:0x%04x | BC:0x%04x | "
@@ -109,13 +116,13 @@ void print_cycle(Registers* reg, Memory* m, int instruction, uint64_t cycles, St
 	if (s->show_ppu) {printf(
 		"LCDC:0x%04x | STAT:0x%04x | "
 		"BGP:0x%04x | ",
-		m->memory[0xFF40],
-		m->memory[0xFF41],
-		m->memory[0xFF47]
+		raw_read(m,0xFF40),
+		raw_read(m,0xFF41),
+		raw_read(m,0xFF47)
 	);}
+	if (s->show_mbc) printf("%d | ", ((m->mbc1_bank2 >> 5) + m->mbc1_bank1));
 	if (s->show_cycles) printf("%-13d | ",cycles);
 	printf("\n");
-	
 }
 
 

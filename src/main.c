@@ -25,10 +25,6 @@ int main(int argc, char *argv[]) {
 	PPU ppu; // pixel processing unit (gpu)
 	Memory m = {0}; // memory
 	Status s = {0}; // debug emualtor status
-	
-	// legacy memory declarations
-	uint8_t boot_rom[0x100] = {0};
-    uint8_t memory[0x10000] = {0};
 
 	// read ROM
     char* file;
@@ -38,29 +34,23 @@ int main(int argc, char *argv[]) {
         file = "test.gb";
 	
 	if (PRINT_DEBUG) printf("[MAIN] loading %s\n", file);
-    Header h = read_header(file);
-    read_ROM(file,h,m.memory); // read into memory
-    read_boot_ROM(file,h,m.boot_rom); // read boot rom into separate memory
-	
-    read_ROM(file,h,m.rom); // read rom into rom copy
 	
 	// clear registers
 	cpu_init(&reg);
-	mem_init(&m);
+	mem_init(file, &m);
 	status_init(&s);
 	
-	// cycle tracking
-	int cycles = 0; // tracks physical cpu cycles in ticks
-	int instruction_count = 0; // tracks instructions run
+	// cycle tracking (64 bit int due to large numbers of cycles/instructions ran during gameplay)
+	uint64_t cycles = 0; // tracks physical cpu cycles in ticks
+	uint64_t instruction_count = 0; // tracks instructions run
 	
-	int div_tracker = 0; // counts cycles in div
-	int frame_tracker = 0; // counts cycles passed until 1 frame
-	int second_tracker = 0; // counts cycles passed until 1 second
+	uint64_t div_tracker = 0; // counts cycles in div
+	uint64_t frame_tracker = 0; // counts cycles passed until 1 frame
+	uint64_t second_tracker = 0; // counts cycles passed until 1 second
 	uint64_t total_cycles = 0;
-	uint16_t total_seconds = 0;
+	uint64_t total_seconds = 0;
 	
 	// debug output
-    print_header(h);
 	if (s.print_memory) {print_memory(&m); s.print_memory=0;};
 	if (s.print_cycle) {
 		print_table_header(&s);
@@ -79,6 +69,7 @@ int main(int argc, char *argv[]) {
 	if (PRINT_DEBUG) printf("[MAIN] cpu cycle start\n");
 	
 	while(s.running){ // main loop
+
 		// cpu cycles
 		int cycle_inc = cpu_step(&m,&reg);
 		
@@ -103,12 +94,7 @@ int main(int argc, char *argv[]) {
 			}
 		}
 		
-		// graphics (ppu)
-		//ppu_step(&ppu, cycle_inc,&m);
-		
-		// update display			
-		
-		
+		// input
 		check_events(&s,&m);
 		
 		// pause
@@ -130,6 +116,10 @@ int main(int argc, char *argv[]) {
 			if (s.print_frame) print_cycle(&reg,&m,instruction_count,total_cycles,&s); // print cycle
 			if (s.show_vram_viewer) vram_window_update(&m); else vram_window_hide(); // vram window
 			if (s.advance_frame) {s.paused=1;s.advance_frame=0;} // frame stepping
+
+			// === ADD PER FRAME DEBUG CODE HERE ===
+
+			// =====================================
 			
 			while ((double)(clock() - frame_start) / CLOCKS_PER_SEC < s.frame_time) {
 				// do nothing until frame time has passed

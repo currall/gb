@@ -21,13 +21,13 @@ uint32_t vram_window_id;
 
 void draw_vram(Memory* m, uint32_t* framebuffer) {
 
-    uint8_t* vram = m->memory + 0x8000;
+    //uint8_t* vram = m->memory + 0x8000;
 
     for (int tile = 0; tile < 384; tile++) {
         int tile_x = (tile % TILES_PER_ROW) * TILE_SIZE;
         int tile_y = (tile / TILES_PER_ROW) * TILE_SIZE;
 
-        uint8_t* tile_data = vram + tile * 16;
+        uint8_t* tile_data = m->vram + tile * 16;
 
         for (int y = 0; y < 8; y++) {
             uint8_t lo = tile_data[y * 2 + 0];

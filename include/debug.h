@@ -27,6 +27,7 @@ typedef struct {
 	int show_cpu;
 	int show_registers;
 	int show_ppu;
+	int show_mbc;
 	int show_ime;
 	int show_cycles;
 	

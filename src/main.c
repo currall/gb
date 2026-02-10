@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
 		instruction_count++;
 		
 		// debug prints
-		if (s.print_cycle) print_cycle(&reg,&m,instruction_count,total_cycles,&s);
+		if (s.print_cycle) {print_cycle(&reg,&m,instruction_count,total_cycles,&s); check_events(&s,&m);} // check events during per-instruction debug so it can turn off
 		if (s.print_memory) {print_memory(&m); s.print_memory=0;};
 		
 		for (int i = 0; i < cycle_inc; i++) {

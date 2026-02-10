@@ -75,12 +75,12 @@ void check_events(Status* s, Memory* m){
 	=== KEYBINDS ===
 	
 	CONTROLS
-	w: up dpad
-	a: left dpad
-	s: down dpad
-	d: right dpad
-	,: b
-	.: a
+	w/up: up dpad
+	a/left: left dpad
+	s/down: down dpad
+	d/right: right dpad
+	,/x: b
+	./z: a
 	enter: start
 	backspace: select
 	
@@ -112,13 +112,13 @@ void check_events(Status* s, Memory* m){
 		}
 		if (e.type == SDL_KEYDOWN && !e.key.repeat) {
 			// controls
-			if (e.key.keysym.sym == SDLK_w) joypad_set_button(m, JP_UP, 1, 0);
-			if (e.key.keysym.sym == SDLK_a) joypad_set_button(m, JP_LEFT, 1, 0);
-			if (e.key.keysym.sym == SDLK_s) joypad_set_button(m, JP_DOWN, 1, 0);
-			if (e.key.keysym.sym == SDLK_d) joypad_set_button(m, JP_RIGHT, 1, 0);
+			if (e.key.keysym.sym == SDLK_w || e.key.keysym.sym == SDLK_UP) joypad_set_button(m, JP_UP, 1, 0);
+			if (e.key.keysym.sym == SDLK_a || e.key.keysym.sym == SDLK_LEFT) joypad_set_button(m, JP_LEFT, 1, 0);
+			if (e.key.keysym.sym == SDLK_s || e.key.keysym.sym == SDLK_DOWN) joypad_set_button(m, JP_DOWN, 1, 0);
+			if (e.key.keysym.sym == SDLK_d || e.key.keysym.sym == SDLK_RIGHT) joypad_set_button(m, JP_RIGHT, 1, 0);
 
-			if (e.key.keysym.sym == SDLK_PERIOD) joypad_set_button(m, JP_A, 1, 1);
-			if (e.key.keysym.sym == SDLK_COMMA)  joypad_set_button(m, JP_B, 1, 1);
+			if (e.key.keysym.sym == SDLK_PERIOD || e.key.keysym.sym == SDLK_z) joypad_set_button(m, JP_A, 1, 1);
+			if (e.key.keysym.sym == SDLK_COMMA  || e.key.keysym.sym == SDLK_x) joypad_set_button(m, JP_B, 1, 1);
 			if (e.key.keysym.sym == SDLK_BACKSPACE) joypad_set_button(m, JP_SELECT, 1, 1);
 			if (e.key.keysym.sym == SDLK_RETURN) joypad_set_button(m, JP_START, 1, 1);
 

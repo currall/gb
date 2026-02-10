@@ -116,12 +116,10 @@ void raw_write(Memory* m, uint16_t addr, uint8_t value) {
     if (addr < 0x4000) { // lower 5 bits of bank no
         m->mbc1_bank1 = value & 0x1F;
         if (m->mbc1_bank1 == 0) m->mbc1_bank1 = 1;
-        printf("[MBC1] Switching to bank no.: %d\n",((m->mbc1_bank2 >> 5) + m->mbc1_bank1));
         return;
     }
     if (addr < 0x6000) { // upper 2 bits of bank no
         m->mbc1_bank2 = value & 0x03;
-        printf("[MBC1] Switching to bank no. (high bank): %d\n",((m->mbc1_bank2 >> 5) + m->mbc1_bank1));
         return;
     }
     if (addr < 0x8000) { // bank mode
@@ -142,11 +140,6 @@ void raw_write(Memory* m, uint16_t addr, uint8_t value) {
 
 void write8(Memory* m, uint16_t addr, uint8_t value) {
 
-    if (addr == 0xC213) { // tetris piece memory
-        printf("WRITE TO C213!! :: 0x%x | DIV :: %d\n",value,raw_read(m,0xFF04));
-        raw_write(m,addr,value);
-    }
-    
     if (addr == 0xFF00) { // input
         raw_write(m,0xFF00, (raw_read(m,0xFF00) & 0xCF) | (value & 0x30) );
     }

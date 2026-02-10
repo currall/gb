@@ -94,8 +94,6 @@ int main(int argc, char *argv[]) {
 			}
 		}
 		
-		// input
-		check_events(&s,&m);
 		
 		// pause
 		if (s.paused) {
@@ -112,17 +110,24 @@ int main(int argc, char *argv[]) {
 		
 		// end timer
 		
-		if (frame_tracker > (CPU_HZ / 60)) {
+		if (frame_tracker > (CPU_HZ / 60)) { // code to run per-frame
+
+			// input
+			check_events(&s,&m);
+
+			// debug
 			if (s.print_frame) print_cycle(&reg,&m,instruction_count,total_cycles,&s); // print cycle
 			if (s.show_vram_viewer) vram_window_update(&m); else vram_window_hide(); // vram window
 			if (s.advance_frame) {s.paused=1;s.advance_frame=0;} // frame stepping
 
-			// === ADD PER FRAME DEBUG CODE HERE ===
+			// === ADD ADDITIONAL PER-FRAME DEBUG CODE HERE ===
 
 			// =====================================
 			
-			while ((double)(clock() - frame_start) / CLOCKS_PER_SEC < s.frame_time) {
-				// do nothing until frame time has passed
+			if (!s.fast_forward) { // skip frame delay if in fast forward
+				while ((double)(clock() - frame_start) / CLOCKS_PER_SEC < s.frame_time) {
+					// do nothing until frame time has passed
+				}
 			}
 			// reset frame cycle counter
 			frame_tracker = 0;

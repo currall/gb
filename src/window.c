@@ -95,6 +95,7 @@ void check_events(Status* s, Memory* m){
 	right shift: logging every instruction (VERY SLOW)
 	
 	SPEED
+	f: fast-forward (run as fast as possible, ignoring per-frame delay)
 	-: slow down emulation
 	+: speed up emulation
 	
@@ -134,6 +135,9 @@ void check_events(Status* s, Memory* m){
 				s->print_frame = !s->print_frame;}
 			if (e.key.keysym.sym == SDLK_m) 
 				s->print_memory = 1;
+			// speed
+			if (e.key.keysym.sym == SDLK_f) 
+				s->fast_forward = 1;
 
 		} 
 		if (e.type == SDL_KEYDOWN) { // allow key to be held down
@@ -155,6 +159,10 @@ void check_events(Status* s, Memory* m){
 			//logging
 			if (e.key.keysym.sym == SDLK_RSHIFT) 
 				s->print_cycle = 0; // only print on hold, do not toggle
+
+			// speed
+			if (e.key.keysym.sym == SDLK_f) 
+				s->fast_forward = 0; // only ff on hold, do not toggle
 		}
 		
 	}

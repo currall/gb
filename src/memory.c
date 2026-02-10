@@ -116,10 +116,12 @@ void raw_write(Memory* m, uint16_t addr, uint8_t value) {
     if (addr < 0x4000) { // lower 5 bits of bank no
         m->mbc1_bank1 = value & 0x1F;
         if (m->mbc1_bank1 == 0) m->mbc1_bank1 = 1;
+        printf("[MBC1] Switching to bank no.: %d\n",((m->mbc1_bank2 >> 5) + m->mbc1_bank1));
         return;
     }
     if (addr < 0x6000) { // upper 2 bits of bank no
         m->mbc1_bank2 = value & 0x03;
+        printf("[MBC1] Switching to bank no. (high bank): %d\n",((m->mbc1_bank2 >> 5) + m->mbc1_bank1));
         return;
     }
     if (addr < 0x8000) { // bank mode
@@ -139,13 +141,18 @@ void raw_write(Memory* m, uint16_t addr, uint8_t value) {
 }
 
 void write8(Memory* m, uint16_t addr, uint8_t value) {
+
+    if (addr == 0xC213) { // tetris piece memory
+        printf("WRITE TO C213!! :: 0x%x | DIV :: %d\n",value,raw_read(m,0xFF04));
+        raw_write(m,addr,value);
+    }
     
     if (addr == 0xFF00) { // input
         raw_write(m,0xFF00, (raw_read(m,0xFF00) & 0xCF) | (value & 0x30) );
     }
 		
-	if (addr == 0xFF01) printf("[SERIAL] %c\n", value); // serial output
-	if (addr == 0xFF02) printf("[SERIAL] %c\n", value); // serial output
+	//if (addr == 0xFF01) printf("[SERIAL] %c\n", value); // serial output
+	//if (addr == 0xFF02) printf("[SERIAL] %c\n", value); // serial output
 	
 	if (addr == 0xFF04) {
 		m->div_counter = 0;
@@ -175,6 +182,13 @@ void write16(Memory* m, uint16_t addr, uint16_t value) {
 }
 
 uint8_t raw_read(Memory *m, uint16_t addr) {
+
+    // use random numebr instead of memory value, to simulate random piece - tetris
+    /* if (addr == 0xC213) { // here is tetris piece
+        if (m->wram[addr - 0xC000] == 0) return rand() % 29;
+    } */
+    
+
     // echo ram
     if (addr >= 0xE000 && addr <= 0xFDFF)
         addr -= 0x2000;
@@ -192,7 +206,8 @@ uint8_t raw_read(Memory *m, uint16_t addr) {
     }
     if (addr < 0x8000) {
         uint8_t bank = m->mbc1_bank1 + (m->mbc1_bank2 << 5);
-        return m->rom[bank * 0x4000 + (addr - 0x4000)];
+        uint64_t address = bank * 0x4000 + (addr - 0x4000);
+        return m->rom[address];
     }
 
     // regular memory
@@ -213,7 +228,8 @@ uint8_t read8(Memory* m, uint16_t addr) {
 	
 	// read rules
 	//if (addr == 0xFF00) return 0xCF; // block input
-	if (addr == 0xFF04) return m->div_counter >> 8; // div counter
+	//if (addr == 0xFF04) return m->div_counter >> 8; // div counter
+	if (addr == 0xFF04) {printf("DIV : %d\n",(m->div_counter >> 8));return m->div_counter >> 8;} // div counter
     //if (addr == 0xFF04) return (uint8_t)rand(); // random value for timer
 	if (addr == 0xFF07) return raw_read(m,0xFF07) | 0xF8; // timer
 

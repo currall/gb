@@ -12,10 +12,13 @@ typedef struct {
     union { struct { uint8_t L, H; }; uint16_t HL; };
 	uint16_t	SP;
 	uint16_t 	PC;
+
 	uint8_t 	IME;
 	uint8_t		IME_delay;
+
 	uint8_t		halted;
-	uint8_t		halt_bug;
+	uint8_t		halt_bug; // recreates bug with halt + interrupt interaction
+	uint8_t		pc_changed; // tracks changes in pc due to jumps etc.
 
 } Registers;
 

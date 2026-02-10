@@ -35,6 +35,7 @@ typedef struct {
 	
 	// speeds up/slows down emulation
 	float frame_time;
+	int fast_forward;
 	
 } Status;
 

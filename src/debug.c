@@ -120,7 +120,7 @@ void print_cycle(Registers* reg, Memory* m, int instruction, uint64_t cycles, St
 		raw_read(m,0xFF41),
 		raw_read(m,0xFF47)
 	);}
-	if (s->show_mbc) printf("%d | ", ((m->mbc1_bank2 >> 5) + m->mbc1_bank1));
+	if (s->show_mbc) printf("%d       | ", ((m->mbc1_bank2 >> 5) + m->mbc1_bank1));
 	if (s->show_cycles) printf("%-13d | ",cycles);
 	printf("\n");
 }

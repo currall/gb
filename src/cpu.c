@@ -357,7 +357,7 @@ void rla(Registers* reg) {
     set_flag(FLAG_H, reg, 0);
 }
 // 0x18
-void jr_x(Registers* reg, uint8_t operand) {reg->PC += 2+(int8_t)operand;}
+void jr_x(Registers* reg, uint8_t operand) {reg->PC += 2+(int8_t)operand;reg->pc_changed = 1;}
 // 0x19
 void add_hl_de(Registers* reg) {reg->HL = add16(reg, reg->HL, reg->DE);}
 // 0x1A
@@ -391,7 +391,9 @@ void rra(Registers* reg) {
 void jr_nz_x(Registers* reg, uint8_t operand, int* cycles) {
 	if (!get_flag(FLAG_Z, reg)) {	
 		reg->PC += 2+(int8_t)operand; 
-		*cycles += 4; }
+		*cycles += 4; 
+		reg->pc_changed = 1;
+	}
 }
 // 0x21
 void ld_hl_xx(Registers* reg,uint16_t operand) {reg->HL = operand;}
@@ -442,7 +444,9 @@ void daa(Registers* reg) {
 void jr_z_x(Registers* reg, uint8_t operand, int* cycles) {
 	if (get_flag(FLAG_Z, reg)) {	
 		reg->PC += 2+(int8_t)operand; 
-		*cycles += 4; }
+		*cycles += 4; 
+		reg->pc_changed = 1;
+	}
 }
 // 0x29
 void add_hl_hl(Registers* reg) {reg->HL = add16(reg, reg->HL, reg->HL);}
@@ -472,7 +476,9 @@ void cpl(Registers* reg) {
 void jr_nc_x(Registers* reg, uint8_t operand, int* cycles) {
 	if (!get_flag(FLAG_C, reg)) {	
 		reg->PC += 2+(int8_t)operand; 
-		*cycles += 4; }
+		*cycles += 4; 
+		reg->pc_changed = 1;
+	}
 }
 // 0x31
 void ld_sp_xx(Registers* reg, uint16_t operand) {reg->SP = operand;}
@@ -496,7 +502,9 @@ void scf(Registers* reg) {
 void jr_c_x(Registers* reg, uint8_t operand, int* cycles) {
 	if (get_flag(FLAG_C, reg)) {	
 		reg->PC += 2+(int8_t)operand; 
-		*cycles += 4; }
+		*cycles += 4; 
+		reg->pc_changed = 1;
+	}
 }
 // 0x39
 void add_hl_sp(Registers* reg) {reg->HL = add16(reg, reg->HL, reg->SP);}
@@ -811,28 +819,30 @@ void cp_a(Registers* reg) {cpu_cp(reg,reg->A);}
 // 0xC0
 void ret_nz(Registers* reg, Memory* m, int* cycles) {
     if (!get_flag(FLAG_Z, reg)) {
-       reg->PC = pop(reg, m);
+       	reg->PC = pop(reg, m);
         *cycles += 12;
+		reg->pc_changed = 1;
     }
-	else {reg->PC += 1;}
 }
 // 0xC1
 void pop_bc(Registers* reg, Memory* m) {reg->BC = pop(reg, m);}
 // 0xC2
 void jp_nz_xx(Registers* reg, uint16_t operand, int* cycles) {
     if (!get_flag(FLAG_Z, reg)) {
-       reg->PC = operand;
+       	reg->PC = operand;
         *cycles += 4;
+		reg->pc_changed = 1;
     }
 }
 // 0xC3
-void jp_xx(Registers* reg, Memory* m, uint16_t operand) {reg->PC = operand;}
+void jp_xx(Registers* reg, Memory* m, uint16_t operand) {reg->PC = operand;reg->pc_changed = 1;}
 // 0xC4
 void call_nz_xx(Registers* reg, Memory* m, uint16_t operand, int* cycles) {
     if (!get_flag(FLAG_Z, reg)) {
         push(reg, m, reg->PC+3);
-       reg->PC = operand;
+       	reg->PC = operand;
         *cycles += 12;
+		reg->pc_changed = 1;
     }
 }
 // 0xC5
@@ -840,19 +850,23 @@ void push_bc(Registers* reg, Memory* m) {push(reg, m, reg->BC);}
 // 0xC6
 void add_a_x(Registers* reg, uint8_t operand) {reg->A = add(reg, reg->A, operand);}
 // 0xC7
-void rst_0(Registers* reg, Memory* m) { rst(reg, m, 0x00); }
+void rst_0(Registers* reg, Memory* m) { rst(reg, m, 0x00); reg->pc_changed = 1;}
 // 0xC8
 void ret_z(Registers* reg, Memory* m, int* cycles) {
     if (get_flag(FLAG_Z, reg)) {
-       reg->PC = pop(reg, m);
+      	reg->PC = pop(reg, m);
         *cycles += 12;
+		reg->pc_changed = 1;
     }
 }
 // 0xC9
-void ret(Registers* reg, Memory* m) {reg->PC = pop(reg, m);}
+void ret(Registers* reg, Memory* m) {reg->PC = pop(reg, m);reg->pc_changed = 1;}
 // 0xCA
 void jp_z_xx(Registers* reg, uint16_t operand) {
-	if (get_flag(FLAG_Z, reg)) reg->PC = operand;
+	if (get_flag(FLAG_Z, reg)) {
+		reg->PC = operand;
+		reg->pc_changed = 1;
+	}
 }
 
 // 0xCB
@@ -868,27 +882,30 @@ void cb(Registers* reg, Memory* m, uint8_t operand, int* cycles) {
 void call_z_xx(Registers* reg, Memory* m, uint16_t operand, int* cycles) {
     if (get_flag(FLAG_Z, reg)) {
         push(reg, m, reg->PC+3);
-       reg->PC = operand;
+       	reg->PC = operand;
         *cycles += 12;
+		reg->pc_changed = 1;
     }
 }
 // 0xCD
 void call_xx(Registers* reg, Memory* m, uint16_t operand) {
 	push(reg, m, reg->PC+3);
 	reg->PC = operand;
+	reg->pc_changed = 1;
 }
 // 0xCE
 void adc_a_x(Registers* reg, uint8_t operand) {reg->A = adc(reg, reg->A, operand);}
 // 0xCF
-void rst_08(Registers* reg, Memory* m) { rst(reg, m, 0x08); }
+void rst_08(Registers* reg, Memory* m) { rst(reg, m, 0x08); reg->pc_changed = 1;}
 
 // --- 0xDx ---
 
 // 0xD0
 void ret_nc(Registers* reg, Memory* m, int* cycles) {
     if (!get_flag(FLAG_C, reg)) {
-       reg->PC = pop(reg, m);
+       	reg->PC = pop(reg, m);
         *cycles += 12;
+		reg->pc_changed = 1;
     }
 }
 // 0xD1
@@ -896,16 +913,18 @@ void pop_de(Registers* reg, Memory* m) {reg->DE = pop(reg, m);}
 // 0xD2
 void jp_nc_xx(Registers* reg, uint16_t operand, int* cycles) {
     if (!get_flag(FLAG_C, reg)) {
-       reg->PC = operand;
+       	reg->PC = operand;
         *cycles += 4;
+		reg->pc_changed = 1;
     }
 }
 // 0xD4
 void call_nc_xx(Registers* reg, Memory* m, uint16_t operand, int* cycles) {
     if (!get_flag(FLAG_C, reg)) {
         push(reg, m, reg->PC+3);
-       reg->PC = operand;
+       	reg->PC = operand;
         *cycles += 12;
+		reg->pc_changed = 1;
     }
 }
 // 0xD5
@@ -913,35 +932,41 @@ void push_de(Registers* reg, Memory* m) {push(reg, m, reg->DE);}
 // 0xD6
 void sub_x(Registers* reg, uint8_t operand) {reg->A = sub(reg, reg->A, operand);}
 // 0xD7
-void rst_10(Registers* reg, Memory* m) { rst(reg, m, 0x10); }
+void rst_10(Registers* reg, Memory* m) { rst(reg, m, 0x10); reg->pc_changed = 1;}
 // 0xD8
 void ret_c(Registers* reg, Memory* m, int* cycles) {
     if (get_flag(FLAG_C, reg)) {
-       reg->PC = pop(reg, m);
+       	reg->PC = pop(reg, m);
         *cycles += 12;
+		reg->pc_changed = 1;
     }
 }
 // 0xD9
 void reti(Registers* reg, Memory* m) {
    reg->PC = pop(reg, m);
    reg->IME = 1;
+   reg->pc_changed = 1;
 }
 // 0xDA
 void jp_c_xx(Registers* reg, uint16_t operand) {
-	if (get_flag(FLAG_C, reg)) reg->PC = operand;
+	if (get_flag(FLAG_C, reg)) {
+		reg->PC = operand;
+		reg->pc_changed = 1;
+	}
 }
 // 0xDC
 void call_c_xx(Registers* reg, Memory* m, uint16_t operand, int* cycles) {
     if (get_flag(FLAG_C, reg)) {
         push(reg, m, reg->PC+3);
-       reg->PC = operand;
+       	reg->PC = operand;
         *cycles += 12;
+		reg->pc_changed = 1;
     }
 }
 // 0xDE
 void sbc_a_x(Registers* reg, uint8_t operand) {reg->A = sbc(reg, reg->A, operand);}
 // 0xDF
-void rst_18(Registers* reg, Memory* m) { rst(reg, m, 0x18); }
+void rst_18(Registers* reg, Memory* m) { rst(reg, m, 0x18); reg->pc_changed = 1;}
 
 // --- 0xEx ---
 
@@ -956,7 +981,7 @@ void push_hl(Registers* reg, Memory* m) {push(reg, m, reg->HL);}
 // 0xE6
 void and_x(Registers* reg, uint8_t operand) {reg->A = cpu_and(reg, operand);}
 // 0xE7
-void rst_20(Registers* reg, Memory* m) { rst(reg, m, 0x20); }
+void rst_20(Registers* reg, Memory* m) { rst(reg, m, 0x20); reg->pc_changed = 1;}
 // 0xE8
 void add_sp_x(Registers* reg, uint8_t operand) {
 	// in theory - reg->SP = reg->SP + (int8_t)operand
@@ -976,13 +1001,13 @@ void add_sp_x(Registers* reg, uint8_t operand) {
    reg->SP = result;
 }
 // 0xE9
-void jp_hlp(Registers* reg) {reg->PC = reg->HL;}
+void jp_hlp(Registers* reg) {reg->PC = reg->HL;reg->pc_changed = 1;}
 // 0xEA
 void ld_xx_a(Registers* reg, Memory* m, uint16_t operand) {write8(m, operand, reg->A);}
 // 0xEE
 void xor_x(Registers* reg, uint8_t operand) {reg->A = cpu_xor(reg, operand);}
 // 0xEF
-void rst_28(Registers* reg, Memory* m) { rst(reg, m, 0x28); }
+void rst_28(Registers* reg, Memory* m) { rst(reg, m, 0x28); reg->pc_changed = 1;}
 
 // --- 0xFx ---
 
@@ -999,7 +1024,7 @@ void push_af(Registers* reg, Memory* m) {push(reg, m, reg->AF);}
 // 0xF6
 void or_x(Registers* reg, uint8_t operand) {reg->A = cpu_or(reg, operand);}
 // 0xF7
-void rst_30(Registers* reg, Memory* m) { rst(reg, m, 0x30); }
+void rst_30(Registers* reg, Memory* m) { rst(reg, m, 0x30); reg->pc_changed = 1;}
 // 0xF8
 void ld_hl_sp_x(Registers* reg, uint8_t operand) {
 	// in theory - reg->HL = reg->SP + (int8_t)operand
@@ -1027,7 +1052,7 @@ void ei(Registers* reg) {reg->IME_delay = 2; }
 // 0xFE
 void cp_x(Registers* reg, uint8_t operand) {cpu_cp(reg,operand);}
 // 0xFF
-void rst_38(Registers* reg, Memory* m) { rst(reg, m, 0x38); }
+void rst_38(Registers* reg, Memory* m) { rst(reg, m, 0x38); reg->pc_changed = 1;}
 
 void cpu_init(Registers* reg) {
 	
@@ -1098,7 +1123,7 @@ int cpu_step(Memory* m, Registers* reg){
 	
 // step 2: read opcode and operands from memory
 
-	uint16_t reg_pc = reg->PC; // backup of PC to detect jumps
+	reg->pc_changed = 0;
 
 	uint8_t opcode = read8(m, reg->PC);
 
@@ -1377,7 +1402,7 @@ int cpu_step(Memory* m, Registers* reg){
 		case (0xE7):rst_20(reg,m); break; // 0xE7
 		case (0xE8):add_sp_x(reg,operand_x); break; // 0xE8
 		case (0xE9):jp_hlp(reg); break; // 0xE9
-		case (0xEA):ld_xx_a(reg,m,operand_x); break; // 0xEA
+		case (0xEA):ld_xx_a(reg,m,operand_xx); break; // 0xEA
 		case (0xEB):nop(reg); break; // 0xEB blank
 		case (0xEC):nop(reg); break; // 0xEC blank
 		case (0xED):nop(reg); break; // 0xED blank
@@ -1411,45 +1436,8 @@ int cpu_step(Memory* m, Registers* reg){
 	if (reg->halt_bug == 1) {
 		reg->halt_bug = 0;
 	} else {
-		if (reg->PC == reg_pc)
-		reg->PC += operand_lengths[opcode]+1;
+		if (!reg->pc_changed) reg->PC += operand_lengths[opcode]+1; // increment pc
 	}
-	
-	
-	
-	/* switch (opcode) {
-
-		case 0x18: 
-		case 0x20:
-		case 0x28: 
-		case 0x30: 
-		case 0x38: 
-		case 0xC2: 
-		case 0xCA: 
-		case 0xD2:
-		case 0xDA:
-		case 0xC3: 
-		case 0xE9:
-		case 0xC4:
-		case 0xCC:
-		case 0xD4:
-		case 0xDC:
-		case 0xCD: 
-		case 0xC0:
-		case 0xC8:
-		case 0xD0: 
-		case 0xD8:
-		case 0xC9: 
-		case 0xD9: 
-		//case 0x76: 
-		//case 0x10: 
-
-			break;
-
-		default:
-			reg->PC += operand_lengths[opcode] + 1;
-			break;
-	} */
 
 // step 5: handle interrupt delay
 	if (reg->IME_delay > 0) {

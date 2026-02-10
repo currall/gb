@@ -12,18 +12,18 @@ main.exe PATH_TO_GAME
 
 ### Controls
 
-| Game Boy Control | System Input |
-| --- | --- |
-| Up | W |
-| Left | A |
-| Down | S |
-| Right | D |
+| Game Boy Control | System Input | Alternate Input |
+| --- | --- | --- |
+| Up D-Pad | Up Arrow Key | W |
+| Left D-Pad | Left Arrow Key | A |
+| Down D-Pad | Down Arrow Key | S |
+| Right D-Pad | Right Arrow Key | D |
 | Start | Enter |
 | Select | Backspace |
-| A | . |
-| B | , |
+| A | Z | . |
+| B | X | , |
 
-| Key | Function |
+| Hotkey | Function |
 | - | - |
 | F | Fast-Forward (disables wait between each frame) |
 | L | Enable per-frame debug output log |
@@ -72,8 +72,12 @@ cd gb
 make
 ```
 
-## Supported Games
+## Supported Cartridges
 
-- Dr. Mario
-- [Flappy Bird](https://laroldsjubilantjunkyard.itch.io/flappy-bird-gameboy)
-- Tetris
+- No MBC (MBC0)
+    - Dr. Mario
+    - [Flappy Bird](https://laroldsjubilantjunkyard.itch.io/flappy-bird-gameboy)
+    - Tetris
+- MBC1
+    - Super Mario Land
+    - Super Mario Land 2

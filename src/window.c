@@ -146,13 +146,13 @@ void check_events(Status* s, Memory* m){
 		}
 		if (e.type == SDL_KEYUP) { // for held keys, not toggled keys
 			//controls
-			if (e.key.keysym.sym == SDLK_w) joypad_set_button(m, JP_UP, 0, 0);
-			if (e.key.keysym.sym == SDLK_a) joypad_set_button(m, JP_LEFT, 0, 0);
-			if (e.key.keysym.sym == SDLK_s) joypad_set_button(m, JP_DOWN, 0, 0);
-			if (e.key.keysym.sym == SDLK_d) joypad_set_button(m, JP_RIGHT, 0, 0);
+			if (e.key.keysym.sym == SDLK_w || e.key.keysym.sym == SDLK_UP) joypad_set_button(m, JP_UP, 0, 0);
+			if (e.key.keysym.sym == SDLK_a || e.key.keysym.sym == SDLK_LEFT) joypad_set_button(m, JP_LEFT, 0, 0);
+			if (e.key.keysym.sym == SDLK_s || e.key.keysym.sym == SDLK_DOWN) joypad_set_button(m, JP_DOWN, 0, 0);
+			if (e.key.keysym.sym == SDLK_d || e.key.keysym.sym == SDLK_RIGHT) joypad_set_button(m, JP_RIGHT, 0, 0);
 
-			if (e.key.keysym.sym == SDLK_PERIOD) joypad_set_button(m, JP_A, 0, 1);
-			if (e.key.keysym.sym == SDLK_COMMA)  joypad_set_button(m, JP_B, 0, 1);
+			if (e.key.keysym.sym == SDLK_PERIOD || e.key.keysym.sym == SDLK_z) joypad_set_button(m, JP_A, 0, 1);
+			if (e.key.keysym.sym == SDLK_COMMA  || e.key.keysym.sym == SDLK_x) joypad_set_button(m, JP_B, 0, 1);
 			if (e.key.keysym.sym == SDLK_BACKSPACE) joypad_set_button(m, JP_SELECT, 0, 1);
 			if (e.key.keysym.sym == SDLK_RETURN) joypad_set_button(m, JP_START, 0, 1);
 

@@ -12,20 +12,26 @@ main.exe PATH_TO_GAME
 
 ### Controls
 
-#### Game Input 
+| Game Boy Control | System Input |
+| --- | --- |
+| Up | W |
+| Left | A |
+| Down | S |
+| Right | D |
+| Start | Enter |
+| Select | Backspace |
+| A | . |
+| B | , |
 
-- W/A/S/D - D-Pad
-- . / , - A / B
-- `Enter` / `Backspace` - Start / Select
-
-#### Tools
-
-- L - Enable per-frame debug output log
-- M - Print memory to output log
-- N - Run until next frame
-- P - Pause
-- V - Toggle VRAM Display Window
-- Hold `Right Shift` - Enable per-cycle output log
+| Key | Function |
+| - | - |
+| F | Fast-Forward (disables wait between each frame) |
+| L | Enable per-frame debug output log |
+| M | Print memory to output log |
+| N | Run until next frame |
+| P | Pause |
+| V | Toggle VRAM Display Window |
+| Right Shift | Enable per-cycle output log |
 
 
 ## Features
@@ -35,6 +41,7 @@ main.exe PATH_TO_GAME
 - VRAM viewer window
 - Pause
 - Frame Stepping
+- Fast-Forward
 
 ## Building
 
@@ -49,7 +56,7 @@ main.exe PATH_TO_GAME
 After updating `MINGW64`, run the following command to install packages needed:
 
 ```
-pacman -S unzip make git mingw-w64-i686-gcc mingw-w64-x86_64-gcc mingw-w64-i686-glew mingw-w64-x86_64-glew mingw-w64-i686-SDL2 mingw-w64-i686-SDL mingw-w64-x86_64-SDL2 mingw-w64-x86_64-SDL python3 mingw-w64-x86_64-make
+pacman -S make mingw-w64-x86_64-gcc mingw-w64-x86_64-SDL2 mingw-w64-x86_64-SDL mingw-w64-x86_64-make
 ```
 
 ### Download & Compile
@@ -67,5 +74,6 @@ make
 
 ## Supported Games
 
+- Dr. Mario
 - [Flappy Bird](https://laroldsjubilantjunkyard.itch.io/flappy-bird-gameboy)
 - Tetris

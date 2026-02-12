@@ -4,7 +4,6 @@
 
 #include <stdint.h>
 
-int read_file(char* file, void* buf, int pos, int bytesToRead);
-int load_rom(char* file, uint8_t** m);
+int load_file(char* file, uint8_t** m);
 
 #endif

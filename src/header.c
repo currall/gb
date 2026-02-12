@@ -3,11 +3,28 @@
 
 #include "file.h"
 #include "header.h"
+#include "memory.h"
 
 // read ROM header from ROM file
-Header read_header(char* file){
+Header read_header(Memory* m){
     Header h;
-    read_file(file, &h, 0x0134, sizeof(Header));
+    
+    for (int i = 0; i < 16; i++) { // 16 byte title
+        h.ROMName[i] = m->rom[0x0134 + i];
+    }
+
+    // New licensee (big endian)
+    h.NewLicensee = ((uint16_t)m->rom[0x0144] << 8) |
+                      (uint16_t)m->rom[0x0145];
+
+    // Single-byte fields
+    h.SGBFeatures   = m->rom[0x0146];
+    h.CartridgeType = m->rom[0x0147];
+    h.ROMSize       = m->rom[0x0148];
+    h.RAMSize       = m->rom[0x0149];
+    h.CountryCode   = m->rom[0x014A];
+    h.Licensee      = m->rom[0x014B];
+
     return h;
 }
 

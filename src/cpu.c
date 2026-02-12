@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "cb.h"
+#include "debug.h"
 #include "memory.h"
 #include "registers.h"
 #include "rom.h"
@@ -1445,9 +1446,16 @@ int cpu_step(Memory* m, Registers* reg){
 		if (!reg->IME_delay)
 			reg->IME = 1;
 	}
-	
-	
+
 	
 	return cycles;
 }
 	
+void inc_cycle_counts(Status* s, int n) {
+	s->cycles += n;
+	s->div_tracker += n;
+	s->frame_tracker += n;
+	s->second_tracker += n;
+	s->total_cycles += n;
+	s->instruction_count++;
+}

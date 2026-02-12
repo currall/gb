@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <windows.h>
 
 #include "debug.h"
 #include "memory.h"
@@ -9,10 +10,28 @@
 
 void status_init(Status* s) {
 
+	// --- emulator status ---
 	s->running = 1;
 	s->paused = 0;
-	s->advance_frame = 0;
 
+	s->restart_triggered = 0;
+	s->new_game = 0;
+
+	s->cycles = 0; 
+	s->instruction_count = 0;
+	
+	s->div_tracker = 0;
+	s->frame_tracker = 0;
+	s->second_tracker = 0;
+	s->total_cycles = 0;
+	s->total_seconds = 0;
+
+	// --- emulation speed ---
+	s->advance_frame = 0;
+	s->advance_cycle = 0;
+	s->fast_forward = 0;
+
+	// --- debug printing ---
 	s->print_cycle = 0;
 	s->print_frame = 0;
 	s->print_memory = 0;
@@ -23,19 +42,17 @@ void status_init(Status* s) {
 	s->show_registers = 	1;
 	s->show_ppu = 			0;
 	s->show_mbc = 			1;
-	s->show_ime = 			1;
+	s->show_ime = 			0;
 	s->show_cycles = 		1;
-	
-	s->frame_time = 1.0 / 60.0;
 	
 }
 
 void print_table_header(Status* s) {
 	
-	char line1[256] = "";
-	char line2[256] = "";
-	char line3[256] = "";
-	char line4[256] = "";
+	char line1[256] = "==";
+	char line2[256] = "| ";
+	char line3[256] = "| ";
+	char line4[256] = "==";
 	
 	if (s->show_instruction) {
 		strcat(line1, "==================");
@@ -93,9 +110,10 @@ void print_table_header(Status* s) {
 	
 }
 
-void print_cycle(Registers* reg, Memory* m, int instruction, uint64_t cycles, Status* s) {
+void print_cycle(Registers* reg, Memory* m, Status* s) {
 	
-	if (s->show_instruction) printf("%.9d: 0x%02x | ",instruction, raw_read(m,reg->PC));
+	printf("| ");
+	if (s->show_instruction) printf("%.9d: 0x%02x | ",s->instruction_count, raw_read(m,reg->PC));
 	if (s->show_operands) printf("0x%02x | 0x%04x | ", raw_read(m,reg->PC+1),raw_read(m,reg->PC + 1) + (raw_read(m,reg->PC + 2) << 8));
 	if (s->show_cpu) printf("PC:0x%04x | SP:0x%04x | ",reg->PC, reg->SP);
 	if (s->show_ime) {printf(
@@ -120,8 +138,8 @@ void print_cycle(Registers* reg, Memory* m, int instruction, uint64_t cycles, St
 		raw_read(m,0xFF41),
 		raw_read(m,0xFF47)
 	);}
-	if (s->show_mbc) printf("%d       | ", ((m->mbc1_bank2 >> 5) + m->mbc1_bank1));
-	if (s->show_cycles) printf("%-13d | ",cycles);
+	if (s->show_mbc) printf("%-7d | ", ((m->mbc1_bank2 >> 5) + m->mbc1_bank1));
+	if (s->show_cycles) printf("%-13d | ",s->cycles);
 	printf("\n");
 }
 
@@ -151,6 +169,10 @@ void print_memory(Memory* m) {
 	}
 	
 	printf("\n=== MEMORY ADDRESS SPACE ===\n");
+
+	for (int i=0; i< 0x10000; i++){
+		printf("%02x",read8(m,i));
+	}
 	
 	printf("\n[MEMORY] Debug print out ended!\n");
 	

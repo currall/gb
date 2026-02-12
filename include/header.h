@@ -4,6 +4,8 @@
 
 #include <stdint.h>
 
+#include "memory.h"
+
 typedef struct {
 
     uint8_t     ROMName[16];
@@ -17,7 +19,7 @@ typedef struct {
 
 } Header;
 
-Header read_header(char* file);
+Header read_header(Memory* m);
 void print_header(Header h);
 
 #endif

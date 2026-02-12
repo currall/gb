@@ -8,17 +8,7 @@
 #include "memory.h"
 #include "rom.h"
 
-void mem_init(char* file, Memory* m) {
-    
-    Header h = read_header(file);
-    print_header(h);
-    
-    read_boot_ROM("dmg_boot.bin",m->boot_rom); // read boot rom into boot rom memory
-
-    m->rom_size = read_rom(file,&m->rom); // read into memory
-    if (!m->rom) {
-        printf("ROM load failed\n");
-    }
+void mem_init(Memory* m) {
 
     // -- MBC1 ---
     m->mbc1_mode = 0;
@@ -221,9 +211,7 @@ uint8_t read8(Memory* m, uint16_t addr) {
 	
 	// read rules
 	//if (addr == 0xFF00) return 0xCF; // block input
-	//if (addr == 0xFF04) return m->div_counter >> 8; // div counter
-	if (addr == 0xFF04) {printf("DIV : %d\n",(m->div_counter >> 8));return m->div_counter >> 8;} // div counter
-    //if (addr == 0xFF04) return (uint8_t)rand(); // random value for timer
+	if (addr == 0xFF04) return m->div_counter >> 8; // div counter
 	if (addr == 0xFF07) return raw_read(m,0xFF07) | 0xF8; // timer
 
 	if (addr >= 0xFF08 && addr <= 0xFF0E) return 0xFF;

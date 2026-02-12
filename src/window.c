@@ -36,6 +36,8 @@ int window_init(char* file) {
     );
 	
 	window_id = SDL_GetWindowID(window);
+	SDL_RaiseWindow(window);
+	SDL_SetWindowInputFocus(window);
 
     return renderer && texture;
 }
@@ -123,8 +125,16 @@ void check_events(Status* s, Memory* m){
 			if (e.key.keysym.sym == SDLK_RETURN) joypad_set_button(m, JP_START, 1, 1);
 
 			// emulation
+			if (e.key.keysym.sym == SDLK_o) 
+				s->new_game = 1;
+			if (e.key.keysym.sym == SDLK_r) 
+				s->restart_triggered = 1;
+
+			if (e.key.keysym.sym == SDLK_n && e.key.keysym.sym == SDLK_LSHIFT){
+				s->advance_cycle = 1; s->paused = 0;}
 			if (e.key.keysym.sym == SDLK_n){
 				s->advance_frame = 1; s->paused = 0;}
+			
 			if (e.key.keysym.sym == SDLK_p) 
 				s->paused = !s->paused;
 			if (e.key.keysym.sym == SDLK_v) 

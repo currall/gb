@@ -12,9 +12,6 @@ typedef struct {
 } Joypad;
 
 typedef struct {
-	
-	uint8_t boot_rom[0x100];
-	uint8_t boot_rom_enabled;
 
 	// === MEMORY ===
 
@@ -27,6 +24,9 @@ typedef struct {
 	uint8_t ie;             // FFFF
 
 	// === ROM ===
+
+	uint8_t* boot_rom;
+	uint8_t boot_rom_enabled;
 
 	uint8_t* rom;
 	uint32_t rom_size;
@@ -52,7 +52,7 @@ typedef struct {
 	
 } Memory;
 
-void mem_init(char* file, Memory* m);
+void mem_init(Memory* m);
 
 void raw_write(Memory* m, uint16_t addr, uint8_t value);
 void write8(Memory* m, uint16_t addr, uint8_t value);

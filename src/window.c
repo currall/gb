@@ -106,7 +106,12 @@ void check_events(Status* s, Memory* m){
 	uint8_t input = 0x3F;
 
 	SDL_Event e;
+
 	while (SDL_PollEvent(&e)) {
+
+		SDL_Keycode key = e.key.keysym.sym;
+		SDL_Keymod mods = SDL_GetModState();
+		
 		if (e.type == SDL_WINDOWEVENT && e.window.event == SDL_WINDOWEVENT_CLOSE) {
 			window_destroy();
 			s->paused = 0;
@@ -114,64 +119,66 @@ void check_events(Status* s, Memory* m){
 		}
 		if (e.type == SDL_KEYDOWN && !e.key.repeat) {
 			// controls
-			if (e.key.keysym.sym == SDLK_w || e.key.keysym.sym == SDLK_UP) joypad_set_button(m, JP_UP, 1, 0);
-			if (e.key.keysym.sym == SDLK_a || e.key.keysym.sym == SDLK_LEFT) joypad_set_button(m, JP_LEFT, 1, 0);
-			if (e.key.keysym.sym == SDLK_s || e.key.keysym.sym == SDLK_DOWN) joypad_set_button(m, JP_DOWN, 1, 0);
-			if (e.key.keysym.sym == SDLK_d || e.key.keysym.sym == SDLK_RIGHT) joypad_set_button(m, JP_RIGHT, 1, 0);
+			if (key == SDLK_w || key == SDLK_UP) joypad_set_button(m, JP_UP, 1, 0);
+			if (key == SDLK_a || key == SDLK_LEFT) joypad_set_button(m, JP_LEFT, 1, 0);
+			if (key == SDLK_s || key == SDLK_DOWN) joypad_set_button(m, JP_DOWN, 1, 0);
+			if (key == SDLK_d || key == SDLK_RIGHT) joypad_set_button(m, JP_RIGHT, 1, 0);
 
-			if (e.key.keysym.sym == SDLK_PERIOD || e.key.keysym.sym == SDLK_z) joypad_set_button(m, JP_A, 1, 1);
-			if (e.key.keysym.sym == SDLK_COMMA  || e.key.keysym.sym == SDLK_x) joypad_set_button(m, JP_B, 1, 1);
-			if (e.key.keysym.sym == SDLK_BACKSPACE) joypad_set_button(m, JP_SELECT, 1, 1);
-			if (e.key.keysym.sym == SDLK_RETURN) joypad_set_button(m, JP_START, 1, 1);
+			if (key == SDLK_PERIOD || key == SDLK_z) joypad_set_button(m, JP_A, 1, 1);
+			if (key == SDLK_COMMA  || key == SDLK_x) joypad_set_button(m, JP_B, 1, 1);
+			if (key == SDLK_BACKSPACE) joypad_set_button(m, JP_SELECT, 1, 1);
+			if (key == SDLK_RETURN) joypad_set_button(m, JP_START, 1, 1);
 
 			// emulation
-			if (e.key.keysym.sym == SDLK_o) 
+			if (key == SDLK_o) 
 				s->new_game = 1;
-			if (e.key.keysym.sym == SDLK_r) 
+			if (key == SDLK_r) 
 				s->restart_triggered = 1;
 
-			if (e.key.keysym.sym == SDLK_n && e.key.keysym.sym == SDLK_LSHIFT){
-				s->advance_cycle = 1; s->paused = 0;}
-			if (e.key.keysym.sym == SDLK_n){
-				s->advance_frame = 1; s->paused = 0;}
+			if (key == SDLK_n){
+				
+				if (mods & KMOD_LSHIFT) s->advance_cycle = 1; 
+				else s->advance_frame = 1;
+				s->paused = 0;
+			}
 			
-			if (e.key.keysym.sym == SDLK_p) 
+			if (key == SDLK_p) 
 				s->paused = !s->paused;
-			if (e.key.keysym.sym == SDLK_v) 
+			if (key == SDLK_v) 
 				s->show_vram_viewer = !s->show_vram_viewer;
 			// logging
-			if (e.key.keysym.sym == SDLK_l){
+			if (key == SDLK_l){
 				if(!s->print_frame) print_table_header(s); 
 				s->print_frame = !s->print_frame;}
-			if (e.key.keysym.sym == SDLK_m) 
+			if (key == SDLK_m) 
 				s->print_memory = 1;
 			// speed
-			if (e.key.keysym.sym == SDLK_f) 
+			if (key == SDLK_f) 
 				s->fast_forward = 1;
 
 		} 
 		if (e.type == SDL_KEYDOWN) { // allow key to be held down
-			if (e.key.keysym.sym == SDLK_RSHIFT) 
+			if (key == SDLK_RSHIFT) 
 				s->print_cycle = 1;
 		}
 		if (e.type == SDL_KEYUP) { // for held keys, not toggled keys
 			//controls
-			if (e.key.keysym.sym == SDLK_w || e.key.keysym.sym == SDLK_UP) joypad_set_button(m, JP_UP, 0, 0);
-			if (e.key.keysym.sym == SDLK_a || e.key.keysym.sym == SDLK_LEFT) joypad_set_button(m, JP_LEFT, 0, 0);
-			if (e.key.keysym.sym == SDLK_s || e.key.keysym.sym == SDLK_DOWN) joypad_set_button(m, JP_DOWN, 0, 0);
-			if (e.key.keysym.sym == SDLK_d || e.key.keysym.sym == SDLK_RIGHT) joypad_set_button(m, JP_RIGHT, 0, 0);
+			if (key == SDLK_w || key == SDLK_UP) joypad_set_button(m, JP_UP, 0, 0);
+			if (key == SDLK_a || key == SDLK_LEFT) joypad_set_button(m, JP_LEFT, 0, 0);
+			if (key == SDLK_s || key == SDLK_DOWN) joypad_set_button(m, JP_DOWN, 0, 0);
+			if (key == SDLK_d || key == SDLK_RIGHT) joypad_set_button(m, JP_RIGHT, 0, 0);
 
-			if (e.key.keysym.sym == SDLK_PERIOD || e.key.keysym.sym == SDLK_z) joypad_set_button(m, JP_A, 0, 1);
-			if (e.key.keysym.sym == SDLK_COMMA  || e.key.keysym.sym == SDLK_x) joypad_set_button(m, JP_B, 0, 1);
-			if (e.key.keysym.sym == SDLK_BACKSPACE) joypad_set_button(m, JP_SELECT, 0, 1);
-			if (e.key.keysym.sym == SDLK_RETURN) joypad_set_button(m, JP_START, 0, 1);
+			if (key == SDLK_PERIOD || key == SDLK_z) joypad_set_button(m, JP_A, 0, 1);
+			if (key == SDLK_COMMA  || key == SDLK_x) joypad_set_button(m, JP_B, 0, 1);
+			if (key == SDLK_BACKSPACE) joypad_set_button(m, JP_SELECT, 0, 1);
+			if (key == SDLK_RETURN) joypad_set_button(m, JP_START, 0, 1);
 
 			//logging
-			if (e.key.keysym.sym == SDLK_RSHIFT) 
+			if (key == SDLK_RSHIFT) 
 				s->print_cycle = 0; // only print on hold, do not toggle
 
 			// speed
-			if (e.key.keysym.sym == SDLK_f) 
+			if (key == SDLK_f) 
 				s->fast_forward = 0; // only ff on hold, do not toggle
 		}
 		

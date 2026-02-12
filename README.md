@@ -25,13 +25,19 @@ main.exe PATH_TO_GAME
 
 | Hotkey | Function |
 | - | - |
-| F | Fast-Forward (disables wait between each frame) |
-| L | Enable per-frame debug output log |
-| M | Print memory to output log |
-| N | Run until next frame |
-| P | Pause |
-| V | Toggle VRAM Display Window |
-| Right Shift | Enable per-cycle output log |
+| *Game Management* |
+| **O** | Open new ROM |
+| **R** | Restart Game |
+| *Debug Logging*|
+| **L** | Enable per-frame debug output log |
+| **M** | Print memory to output log |
+| **V** | Toggle VRAM Display Window |
+| **Right Shift** | Enable per-cycle output log |
+| *Speed* |
+| **F** | Fast-Forward (disables wait between each frame) |
+| **N** | Run until next frame |
+| **Shift + N** | Run until next instruction |
+| **P** | Pause |
 
 
 ## Features

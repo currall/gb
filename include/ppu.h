@@ -3,6 +3,7 @@
 #define PPU_H
 
 #include <stdint.h>
+#include "debug.h"
 #include "memory.h"
 
 #define MODE_HBLANK 0
@@ -19,16 +20,19 @@
 #define LY   0xFF44
 #define LYC  0xFF45
 #define BGP  0xFF47
+#define WY   0xFF4A
+#define WX   0xFF4B
 
 typedef struct {
     int mode;		
     int scanline;	// number of scanlines
     int dot;		// cycles in current scanline
 	int frame_ready; // is there a frame ready in the frame buffer?
+    uint8_t window_line; // line of window texture
 } PPU;
 
 void ppu_init(PPU* ppu, Memory* m);
-void ppu_step(PPU* ppu, Memory* m);
+void ppu_step(PPU* ppu, Memory* m, Status* s);
 int  ppu_frame_ready(PPU* ppu);
 uint32_t* ppu_get_framebuffer(PPU* ppu);
 void clear_framebuffer();

@@ -11,7 +11,7 @@ typedef struct {
 
 } Joypad;
 
-typedef struct {
+typedef struct Memory {
 
 	// === MEMORY ===
 

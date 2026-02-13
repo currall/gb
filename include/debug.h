@@ -9,7 +9,7 @@
 
 #define PRINT_DEBUG	1
 
-typedef struct {
+typedef struct Status {
 	
 	// emulator status
 	int running;
@@ -43,6 +43,8 @@ typedef struct {
 	int show_ime;
 	int show_cycles;
 	
+	// video
+	int palette_no;
 	int show_vram_viewer;
 	
 	// emulation speed

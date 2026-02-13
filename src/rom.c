@@ -1,13 +1,15 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "tinyfiledialogs.h"
 
 #include "debug.h"
 #include "file.h"
+#include "header.h"
 
-char* read_rom(char* file, Memory* m){ 
+char* read_rom(char* file, Memory* m, Status* s){ 
 
 	const char* filter[] = {"*.gb","*.gbc"};
     
@@ -32,6 +34,12 @@ char* read_rom(char* file, Memory* m){
 
     Header h = read_header(m);
     print_header(h);
+    
+    // automatically detect palette
+    if (strncmp((char*)h.ROMName, "TETRIS", 6) == 0) s->palette_no = 4;
+    if (strncmp((char*)h.ROMName, "SUPER MARIOLAND", 16) == 0) s->palette_no = 5;
+    if (strncmp((char*)h.ROMName, "MARIOLAND2", 10) == 0) s->palette_no = 6;
+    if (strncmp((char*)h.ROMName, "DR.MARIO", 8) == 0) s->palette_no = 7;
 
 	return file;
 

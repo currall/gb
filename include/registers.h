@@ -2,8 +2,6 @@
 #ifndef REGISTERS_H
 #define REGISTERS_H
 
-#include "rom.h"
-
 typedef struct {
 
     union { struct { uint8_t F, A; }; uint16_t AF; };

@@ -10,6 +10,17 @@
 
 void mem_init(Memory* m) {
 
+    // default memory to high
+    for (int i = 0; i < 0x2000; i++) {
+        m->vram[i] = 0xFF;
+        m->eram[i] = 0xFF;
+        m->wram[i] = 0xFF;
+    }
+    for (int i = 0; i < 0xA0; i++) m->oam[i] = 0xFF;
+    for (int i = 0; i < 0x80; i++) m->io[i] = 0xFF;
+    for (int i = 0; i < 0x7F; i++) m->hram[i] = 0xFF;
+    m->ie = 0xFF;
+
     // -- MBC1 ---
     m->mbc1_mode = 0;
 	m->mbc1_bank1 = 1;

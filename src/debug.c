@@ -44,6 +44,9 @@ void status_init(Status* s) {
 	s->show_mbc = 			1;
 	s->show_ime = 			0;
 	s->show_cycles = 		1;
+
+	// --- video ---
+	s->show_vram_viewer = 0;
 	
 }
 

@@ -111,7 +111,7 @@ void check_events(Status* s, Memory* m){
 
 		SDL_Keycode key = e.key.keysym.sym;
 		SDL_Keymod mods = SDL_GetModState();
-		
+
 		if (e.type == SDL_WINDOWEVENT && e.window.event == SDL_WINDOWEVENT_CLOSE) {
 			window_destroy();
 			s->paused = 0;
@@ -144,8 +144,6 @@ void check_events(Status* s, Memory* m){
 			
 			if (key == SDLK_p) 
 				s->paused = !s->paused;
-			if (key == SDLK_v) 
-				s->show_vram_viewer = !s->show_vram_viewer;
 			// logging
 			if (key == SDLK_l){
 				if(!s->print_frame) print_table_header(s); 
@@ -155,6 +153,22 @@ void check_events(Status* s, Memory* m){
 			// speed
 			if (key == SDLK_f) 
 				s->fast_forward = 1;
+			// video
+			if (key == SDLK_v) 
+				s->show_vram_viewer = !s->show_vram_viewer;
+			// palette
+			switch (key) {
+				case SDLK_1: s->palette_no = 0; break;
+				case SDLK_2: s->palette_no = 1; break;
+				case SDLK_3: s->palette_no = 2; break;
+				case SDLK_4: s->palette_no = 3; break;
+				case SDLK_5: s->palette_no = 4; break;
+				case SDLK_6: s->palette_no = 5; break;
+				case SDLK_7: s->palette_no = 6; break;
+				case SDLK_8: s->palette_no = 7; break;
+				case SDLK_9: s->palette_no = 8; break;
+				case SDLK_0: s->palette_no = 9; break;
+			}
 
 		} 
 		if (e.type == SDL_KEYDOWN) { // allow key to be held down

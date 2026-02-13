@@ -20,7 +20,7 @@
 
 char* gb_init(char* file, Registers* reg, Memory* m, Status* s) {
 
-	file = read_rom(file,m); // read into memory
+	file = read_rom(file,m,s); // read into memory
 	read_boot_ROM("dmg_boot.bin",&m->boot_rom); // read boot rom into boot rom memory
 
 	cpu_init(reg);
@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
 		
 		for (int i = 0; i < c; i++) {
 			dma_step(&m);
-			ppu_step(&ppu,&m);
+			ppu_step(&ppu,&m, &s);
 			timer_step(&m);
 			if (ppu_frame_ready(&ppu)) {
 				window_update(ppu_get_framebuffer(&ppu));

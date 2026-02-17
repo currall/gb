@@ -8,6 +8,18 @@ static SDL_Renderer* renderer = NULL;
 static SDL_Texture*  texture  = NULL;
 uint32_t window_id = 0;
 
+typedef enum {
+    P_BLACK_AND_WHITE = 0,
+    P_RED = 0,
+    P_GREEN = 0,
+    P_BLUE = 0,
+    P_MARIO_LAND = 0,
+    P_MARIO_LAND_2 = 0,
+    P_DR_MARIO = 0,
+    P_PINK = 0,
+    P_DMG_GREEN = 0
+} GamePalettes;
+
 int window_init(char* file) {
     if (SDL_Init(SDL_INIT_VIDEO) != 0)
         return 0;

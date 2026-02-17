@@ -2,7 +2,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <windows.h>
 
 #include "debug.h"
 #include "memory.h"
@@ -141,7 +140,7 @@ void print_cycle(Registers* reg, Memory* m, Status* s) {
 		raw_read(m,0xFF41),
 		raw_read(m,0xFF47)
 	);}
-	if (s->show_mbc) printf("%-7d | ", ((m->mbc1_bank2 >> 5) + m->mbc1_bank1));
+	if (s->show_mbc) printf("%-7d | ", ((m->mbc_bank2 >> 5) + m->mbc_bank1));
 	if (s->show_cycles) printf("%-13d | ",s->cycles);
 	printf("\n");
 }

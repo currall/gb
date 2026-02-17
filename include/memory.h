@@ -16,7 +16,7 @@ typedef struct Memory {
 	// === MEMORY ===
 
 	uint8_t vram[0x2000];   // 8000-9FFF
-	uint8_t eram[0x2000];   // A000-BFFF
+	uint8_t* eram;   		// A000-BFFF - extensible using MBC cartridges
 	uint8_t wram[0x2000];   // C000-DFFF
 	uint8_t oam[0xA0];      // FE00-FE9F
 	uint8_t io[0x80];       // FF00-FF7F
@@ -31,10 +31,16 @@ typedef struct Memory {
 	uint8_t* rom;
 	uint32_t rom_size;
 
-	// --- MBC1 ---
+	// === MBC ===
+	uint8_t cartridge_type;
+	uint8_t mbc_type;
+	uint8_t mbc_bank1;
+	uint8_t mbc_bank2;
 	uint8_t mbc1_mode;
-	uint8_t mbc1_bank1;
-	uint8_t mbc1_bank2;
+
+	// -- MBC RAM --
+	uint8_t mbc_ram_enable;
+	uint32_t ram_size;
 	
 	// === TIMERS ===
 	uint16_t div_counter;

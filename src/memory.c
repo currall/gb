@@ -8,12 +8,19 @@
 #include "memory.h"
 #include "rom.h"
 
+uint8_t get_mbc_type(uint8_t cartridge_type) {
+    if (cartridge_type == 0) return 0;
+    if (cartridge_type >= 0x01 && cartridge_type <= 0x03) return 1; // MBC1
+    if (cartridge_type >= 0x05 && cartridge_type <= 0x06) return 2; // MBC2
+    if (cartridge_type >= 0x0F && cartridge_type <= 0x13) return 3; // MBC3
+    if (cartridge_type >= 0x19 && cartridge_type <= 0x1E) return 5; // MBC5
+}
+
 void mem_init(Memory* m) {
 
     // default memory to high
     for (int i = 0; i < 0x2000; i++) {
         m->vram[i] = 0xFF;
-        m->eram[i] = 0xFF;
         m->wram[i] = 0xFF;
     }
     for (int i = 0; i < 0xA0; i++) m->oam[i] = 0xFF;
@@ -21,10 +28,13 @@ void mem_init(Memory* m) {
     for (int i = 0; i < 0x7F; i++) m->hram[i] = 0xFF;
     m->ie = 0xFF;
 
-    // -- MBC1 ---
+    // -- MBC ---
+    m->mbc_type = get_mbc_type(m->cartridge_type);
+	m->mbc_bank1 = 1;
+	m->mbc_bank2 = 0;
+    m->mbc_ram_enable = 0;
+
     m->mbc1_mode = 0;
-	m->mbc1_bank1 = 1;
-	m->mbc1_bank2 = 0;
 	
 	// --- Joypad ---
     m->io[0x00] = 0xCF;
@@ -94,12 +104,6 @@ void mem_init(Memory* m) {
 
 }
 
-int dma_blocks2(Memory* m, uint16_t addr) {
-    if (!m->dma_active) return 0;
-    if (addr >= 0xFF00) return 0;
-    return 1;
-}
-
 int dma_blocks(Memory* m, uint16_t addr) {
     if (!m->dma_active) return 0;
 
@@ -112,15 +116,17 @@ int dma_blocks(Memory* m, uint16_t addr) {
 void raw_write(Memory* m, uint16_t addr, uint8_t value) {
 
     if (addr < 0x2000) {
-        return; // ignore ram
+        if (value & 0x0F) m->mbc_ram_enable = 1;
+        else m->mbc_ram_enable = 0;
+        return;
     }
     if (addr < 0x4000) { // lower 5 bits of bank no
-        m->mbc1_bank1 = value & 0x1F;
-        if (m->mbc1_bank1 == 0) m->mbc1_bank1 = 1;
+        m->mbc_bank1 = value & 0x1F;
+        if (m->mbc_bank1 == 0) m->mbc_bank1 = 1;
         return;
     }
     if (addr < 0x6000) { // upper 2 bits of bank no
-        m->mbc1_bank2 = value & 0x03;
+        m->mbc_bank2 = value & 0x03;
         return;
     }
     if (addr < 0x8000) { // bank mode
@@ -128,9 +134,19 @@ void raw_write(Memory* m, uint16_t addr, uint8_t value) {
         return;
     }
 
+    if (addr >= 0xA000 && addr <= 0xBFFF) { // external ram
+        if (m->mbc_ram_enable) {
+            uint8_t ram_banks = m->ram_size / 0x2000;
+            uint8_t ram_bank_no = m->mbc_bank2;
+
+            if (m->mbc_bank2 >= ram_banks) ram_bank_no = 0;
+            m->eram[(addr - 0xA000) + (0x2000 * ram_bank_no)] = value;
+
+        } else m->eram[addr - 0xA000] = value;
+    }
+
     // normal memory
     if (addr >= 0x8000 && addr <= 0x9FFF) m->vram[addr - 0x8000] = value;
-    if (addr >= 0xA000 && addr <= 0xBFFF) m->eram[addr - 0xA000] = value;
     if (addr >= 0xC000 && addr <= 0xDFFF) m->wram[addr - 0xC000] = value;
     if (addr >= 0xE000 && addr <= 0xFDFF) m->wram[addr - 0xC000] = value; // echo ram
     if (addr >= 0xFE00 && addr <= 0xFE9F) m->oam[addr - 0xFE00] = value;
@@ -177,12 +193,6 @@ void write16(Memory* m, uint16_t addr, uint16_t value) {
 
 uint8_t raw_read(Memory *m, uint16_t addr) {
 
-    // use random numebr instead of memory value, to simulate random piece - tetris
-    /* if (addr == 0xC213) { // here is tetris piece
-        if (m->wram[addr - 0xC000] == 0) return rand() % 29;
-    } */
-    
-
     // echo ram
     if (addr >= 0xE000 && addr <= 0xFDFF)
         addr -= 0x2000;
@@ -195,19 +205,30 @@ uint8_t raw_read(Memory *m, uint16_t addr) {
     // rom
     if (addr < 0x4000) {
         uint8_t bank = 0;
-        if (m->mbc1_mode == 1) bank = m->mbc1_bank2 << 5;
+        if (m->mbc1_mode == 1) bank = m->mbc_bank2 << 5;
         return m->rom[addr + (0x4000 * bank)];
     }
     if (addr < 0x8000) {
-        uint8_t bank = m->mbc1_bank1 + (m->mbc1_bank2 << 5);
+        uint8_t bank = m->mbc_bank1 + (m->mbc_bank2 << 5);
         uint64_t address = bank * 0x4000 + (addr - 0x4000);
         return m->rom[address];
+    }
+
+    // mbc ram
+    if (addr >= 0xA000 && addr <= 0xBFFF) { // external ram
+        if (m->mbc_ram_enable) {
+            uint8_t ram_banks = m->ram_size / 0x2000;
+            uint8_t ram_bank_no = m->mbc_bank2;
+
+            if (m->mbc_bank2 >= ram_banks) ram_bank_no = 0;
+            return m->eram[(addr - 0xA000) + (0x2000 * ram_bank_no)];
+
+        } else return m->eram[addr - 0xA000];
     }
 
     // regular memory
 
     if (addr >= 0x8000 && addr <= 0x9FFF) return m->vram[addr - 0x8000];
-    if (addr >= 0xA000 && addr <= 0xBFFF) return m->eram[addr - 0xA000];
     if (addr >= 0xC000 && addr <= 0xDFFF) return m->wram[addr - 0xC000];
     if (addr >= 0xE000 && addr <= 0xFDFF) return m->wram[addr - 0xE000]; // echo ram
     if (addr >= 0xFE00 && addr <= 0xFE9F) return m->oam[addr - 0xFE00];

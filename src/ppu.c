@@ -49,7 +49,7 @@ uint32_t obj1_palette[10][4] = { // OBP1
 	{0xFFFFE0E0, 0xFFFFC0C0, 0xFFFF6060, 0xFF300000}, // red
 	{0xFFE0FFE0, 0xFF80E080, 0xFF40A040, 0xFF003000}, // green
 	{0xFFE0E0FF, 0xFF8080E0, 0xFF4040A0, 0xFF000030}, // blue
-	{0xFFFFFFFF, 0xFFFFFF00, 0xFFFF0000, 0xFF000000}, // tetris
+	{0xFFFFFFFF, 0xFF5ABDFF, 0xFFFF0000, 0xFF0000FF}, // tetris
 	{0xFF000000, 0xFFFFFFFF, 0xFFFF8484, 0xFF943A3A}, // mario land
 	{0xFFFFFFFF, 0xFF63A5FF, 0xFF0000FF, 0xFF000000}, // mario land 2
 	{0xFFFFFFFF, 0xFFFF8484, 0xFF943A3A, 0xFF000000}, // dr mario
@@ -320,8 +320,8 @@ void ppu_step(PPU* ppu, Memory* m, Status* s) {
 		
 		case MODE_VRAM:
 		
-			if (ppu->dot >= 166) {
-				ppu->dot -= 166;
+			if (ppu->dot >= 172) {
+				ppu->dot -= 172;
 				ppu_mode_set(ppu,m,MODE_HBLANK);
 				
 			} break;

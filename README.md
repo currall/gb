@@ -31,13 +31,16 @@ main.exe PATH_TO_GAME
 | *Debug Logging*|
 | **L** | Enable per-frame debug output log |
 | **M** | Print memory to output log |
-| **V** | Toggle VRAM Display Window |
 | **Right Shift** | Enable per-cycle output log |
 | *Speed* |
 | **F** | Fast-Forward (disables wait between each frame) |
 | **N** | Run until next frame |
 | **Shift + N** | Run until next instruction |
 | **P** | Pause |
+| *Video* |
+| **V** | Toggle VRAM Display Window |
+| **0-9** | Select color palette |
+
 
 
 ## Features
@@ -81,9 +84,26 @@ make
 ## Supported Cartridges
 
 - No MBC (MBC0)
-    - Dr. Mario
-    - [Flappy Bird](https://laroldsjubilantjunkyard.itch.io/flappy-bird-gameboy)
-    - Tetris
 - MBC1
-    - Super Mario Land
-    - Super Mario Land 2
+
+### Compatibility List
+
+- [Flappy Bird](https://laroldsjubilantjunkyard.itch.io/flappy-bird-gameboy)
+
+| Code | Compatibility |
+| - | - |
+| 🟩 | No known issues |
+| 🟦 | Minor issues but gameplay is correct |
+| 🟥 | Gameplay does not start |
+
+| | Game Title | Issues |
+| - | - | - |
+| 🟩 | Dr. Mario | No issues |
+| 🟩 | Super Mario Land 2 | No issues |
+| 🟦 | Super Mario Land | Freezes on game over |
+| 🟦 | Tetris | Freezes on pause screen |
+| 🟥 | Alleyway | Skips title screen, doesn't recognise controls in gameplay |
+| 🟥 | Legend of Zelda: Link's Awakening | Breaks after leaving first area |
+| 🟥 | Pokemon Red | Loads copyright screen, doesn't load to title screen |
+| 🟥 | Wario Land | Crashes emulator after selecting save file |
+| 🟥 | Wario Land 2 | Doesn't load |

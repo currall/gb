@@ -1,9 +1,30 @@
 CC = gcc
 
-CFLAGS := -Iinclude -I/mingw64/include/SDL2 -Iexternal/tinyfiledialogs
-CFLAGS_DEBUG := -Wall -Wextra -Iinclude -I/mingw64/include/SDL2 -Iexternal/tinyfiledialogs
+PLATFORM ?= auto
 
-LDLIBS := -lSDL2main -lSDL2 -lole32 -lcomdlg32
+ifeq ($(PLATFORM),auto) # detect platform
+    ifeq ($(OS),Windows_NT)
+        PLATFORM := windows
+    else
+        PLATFORM := linux
+    endif
+endif
+
+ifeq ($(PLATFORM),windows)
+
+    CFLAGS := -Iinclude -I/mingw64/include/SDL2 -Iexternal/tinyfiledialogs
+    CFLAGS_DEBUG := -Wall -Wextra $(CFLAGS)
+
+    LDLIBS := -lSDL2main -lSDL2 -lole32 -lcomdlg32
+
+else ifeq ($(PLATFORM),linux)
+
+    CFLAGS := -Iinclude -Iexternal/tinyfiledialogs `sdl2-config --cflags`
+    CFLAGS_DEBUG := -Wall -Wextra $(CFLAGS)
+
+    LDLIBS := `sdl2-config --libs`
+
+endif
 
 SRC_DIR := src
 OBJ_DIR := build

@@ -19,10 +19,10 @@
 #define FPS			60
 
 char* gb_init(char* file, Registers* reg, Memory* m, Status* s) {
-
+	
 	file = read_rom(file,m,s); // read into memory
 	read_boot_ROM("dmg_boot.bin",&m->boot_rom); // read boot rom into boot rom memory
-
+	
 	cpu_init(reg);
 	mem_init(m);
 	status_init(s);

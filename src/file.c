@@ -48,3 +48,59 @@ uint32_t load_file(char* file, uint8_t** m) {
     printf("[FILE] Loaded file: %s (%d bytes)\n", file, file_size);
     return file_size;
 }
+
+char* savefile_name(char *file) {
+    if (file == NULL) return NULL;
+
+    size_t filename_len = strlen(file) + 5;
+    char* savefile = (char *)malloc(filename_len);
+    
+    if (savefile == NULL) {
+        return NULL; 
+    }
+    
+    snprintf(savefile, filename_len, "%s.sav", file);
+    return savefile;
+}
+
+void save_game(char* file, uint8_t* eram, uint32_t ram_size) {
+    char *savefile = savefile_name(file);
+
+    // open file
+    FILE *fp = fopen(savefile, "wb");
+    if (fp == NULL) {
+        perror("[FILE] Error writing save file!");
+        free(savefile);
+        return;
+    }
+
+    // write eram to file
+    uint32_t items_written = fwrite(eram, sizeof(uint8_t), ram_size, fp);
+
+    // close file
+    fclose(fp);
+    free(savefile);
+}
+
+void load_game(char* file, uint8_t* eram, uint32_t ram_size) {
+    if (file == NULL || eram == NULL) return;
+
+    char *savefile = savefile_name(file);
+    if (savefile == NULL) {
+        return;
+    }
+
+    FILE *fp = fopen(savefile, "rb");
+    if (fp == NULL) {
+        perror("[FILE] No save file detected");
+        free(savefile);
+        return;
+    }
+
+    fread(eram, sizeof(uint8_t), ram_size, fp); // read data
+    fclose(fp);
+    free(savefile);
+
+    printf("[FILE] Loaded save file: %s (%d bytes)\n", savefile, ram_size);
+
+}

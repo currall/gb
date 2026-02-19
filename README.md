@@ -63,6 +63,7 @@ main.exe PATH_TO_GAME
 - Pause
 - Frame Stepping
 - Fast-Forward
+- Game saves
 - Game Boy Color palette colorisation
 
 ## Building

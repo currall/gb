@@ -27,6 +27,8 @@ char* gb_init(char* file, Registers* reg, Memory* m, Status* s) {
 	mem_init(m);
 	status_init(s);
 
+	if (m->ram_size > 0) load_game(file,m->eram,m->ram_size); // attempt to load save file
+
 	return file;
 }
 
@@ -143,6 +145,9 @@ int main(int argc, char *argv[]) {
 			}
 		}
 	}
+
+	// if game has external ram, save it to save file
+	if (m.ram_size > 0) save_game(file, m.eram, m.ram_size);
 	
 	window_destroy();
 	vram_window_destroy();

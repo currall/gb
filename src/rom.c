@@ -67,17 +67,15 @@ char* read_rom(char* file, Memory* m, Status* s){
     print_header(h);
 
     m->ram_size = get_ram_size(h.RAMSize); // get number of bytes in external ram
-    printf("ram size (b): 0x%x\n",m->ram_size);
 
     // mbc hardware handling
     m->cartridge_type = h.CartridgeType;
-    printf("mbc type %d\n",m->cartridge_type);
     m->eram = (uint8_t*)malloc(m->ram_size);
     for (size_t i = 0; i < m->ram_size; i++) m->eram[i] = 0xFF;
 
     // gbc palette selection
     uint8_t game_id = encode_title(h.ROMName);
-    printf("Game ID: %x",game_id);
+    printf("Game ID: %x\n",game_id);
 
     switch(game_id) {
         case ID_DR_MARIO:       s->game_palette = PALETTE_DR_MARIO; break; 

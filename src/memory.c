@@ -113,11 +113,6 @@ int dma_blocks(Memory* m, uint16_t addr) {
     return 0;
 }
 
-uint16_t get_no_of_banks(Memory* m) { // return number of rom banks
-    if (m->rom_size == 0) return 1; 
-    return (m->rom_size / 0x4000) - 1;
-}
-
 void raw_write(Memory* m, uint16_t addr, uint8_t value) {
 
     if (addr < 0x2000) {

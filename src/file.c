@@ -80,6 +80,8 @@ void save_game(char* file, uint8_t* eram, uint32_t ram_size) {
     // close file
     fclose(fp);
     free(savefile);
+    printf("[FILE] Saved to file: %s (%d / %d bytes)\n", savefile, items_written , ram_size);
+
 }
 
 void load_game(char* file, uint8_t* eram, uint32_t ram_size) {

@@ -34,7 +34,7 @@ typedef struct Memory {
 	// === MBC ===
 	uint8_t cartridge_type;
 	uint8_t mbc_type;
-	uint8_t mbc_bank1;
+	uint16_t mbc_bank1; // uint16 to support mbc5
 	uint8_t mbc_bank2;
 	uint8_t mbc1_mode;
 

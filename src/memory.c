@@ -9,11 +9,15 @@
 #include "rom.h"
 
 uint8_t get_mbc_type(uint8_t cartridge_type) {
-    if (cartridge_type == 0) return 0;
-    if (cartridge_type >= 0x01 && cartridge_type <= 0x03) return 1; // MBC1
-    if (cartridge_type >= 0x05 && cartridge_type <= 0x06) return 2; // MBC2
-    if (cartridge_type >= 0x0F && cartridge_type <= 0x13) return 3; // MBC3
-    if (cartridge_type >= 0x19 && cartridge_type <= 0x1E) return 5; // MBC5
+    uint8_t mbc = 0;
+    if (cartridge_type == 0) mbc = 0;
+    if (cartridge_type >= 0x01 && cartridge_type <= 0x03) mbc = 1; // MBC1
+    if (cartridge_type >= 0x05 && cartridge_type <= 0x06) mbc = 2; // MBC2
+    if (cartridge_type >= 0x0F && cartridge_type <= 0x13) mbc = 3; // MBC3
+    if (cartridge_type >= 0x19 && cartridge_type <= 0x1E) mbc = 5; // MBC5
+
+    printf("cart type: 0x%x, mbc%d\n",cartridge_type,mbc);
+    return mbc;
 }
 
 void mem_init(Memory* m) {
@@ -104,17 +108,11 @@ void mem_init(Memory* m) {
 
 }
 
-int dma_blocks(Memory* m, uint16_t addr) {
-    if (!m->dma_active) return 0;
+// === MBC FUNCTIONS ===
 
-    // only block oam writes
-    if (addr >= 0xFE00 && addr <= 0xFE9F) return 1;
+// -- MBC1 -- 
 
-    return 0;
-}
-
-void raw_write(Memory* m, uint16_t addr, uint8_t value) {
-
+void mbc1_write(Memory* m, uint16_t addr, uint8_t value) {
     if (addr < 0x2000) {
         if ((value & 0x0F) == 0x0A) m->mbc_ram_enable = 1;
         else m->mbc_ram_enable = 0;
@@ -133,7 +131,6 @@ void raw_write(Memory* m, uint16_t addr, uint8_t value) {
         m->mbc1_mode = value & 0x01;
         return;
     }
-
     if (addr >= 0xA000 && addr <= 0xBFFF) { // external ram
         if (m->mbc_ram_enable) {
 
@@ -148,6 +145,172 @@ void raw_write(Memory* m, uint16_t addr, uint8_t value) {
 
         }
     }
+}
+
+uint8_t mbc1_read(Memory* m, uint16_t addr) {
+    // rom
+    if (addr < 0x4000) {
+        uint8_t bank = 0;
+        if (m->mbc1_mode == 1) bank = m->mbc_bank2 << 5;
+        return m->rom[addr + (0x4000 * bank)];
+    }
+    if (addr < 0x8000) {
+        uint8_t bank = m->mbc_bank1 + (m->mbc_bank2 << 5);
+        uint64_t address = bank * 0x4000 + (addr - 0x4000);
+        return m->rom[address];
+    }
+    // mbc ram
+    if (addr >= 0xA000 && addr <= 0xBFFF) { // external ram
+        if (m->mbc_ram_enable) {
+            uint8_t ram_bank_no = 0;
+            if (m->mbc1_mode == 1){
+                uint8_t ram_banks = m->ram_size / 0x2000;
+                ram_bank_no = m->mbc_bank2;
+
+                if (m->mbc_bank2 >= ram_banks) ram_bank_no = 0;
+            }
+            return m->eram[(addr - 0xA000) + (0x2000 * ram_bank_no)];
+
+        } else return 0xFF;
+    }
+}
+
+// -- MBC3 --
+
+void mbc3_write(Memory* m, uint16_t addr, uint8_t value) {
+    if (addr < 0x2000) {
+        // ram enable
+        if ((value & 0x0F) == 0x0A) m->mbc_ram_enable = 1;
+        else m->mbc_ram_enable = 0;
+        return;
+    }
+    if (addr < 0x4000) { 
+        m->mbc_bank1 = value & 0x7F;
+        if (m->mbc_bank1 == 0) m->mbc_bank1 = 1; 
+        return;
+    }
+    if (addr < 0x6000) { 
+        m->mbc_bank2 = value; 
+        return;
+    }
+    if (addr < 0x8000) { // clock
+        return;
+    }
+    
+    if (addr >= 0xA000 && addr <= 0xBFFF) { 
+        if (m->mbc_ram_enable) {
+            if (m->mbc_bank2 <= 0x03) { // eram
+                m->eram[(addr - 0xA000) + (0x2000 * m->mbc_bank2)] = value;
+            } else if (m->mbc_bank2 >= 0x08 && m->mbc_bank2 <= 0x0C) { // rtc
+                // add rtc here
+            }
+        }
+    }
+}
+
+uint8_t mbc3_read(Memory* m, uint16_t addr) {
+    if (addr < 0x4000) { // always bank 0
+        return m->rom[addr]; 
+    }
+    if (addr < 0x8000) {
+        uint64_t address = m->mbc_bank1 * 0x4000 + (addr - 0x4000);
+        return m->rom[address];
+    }
+    
+    // eram or rtc
+    if (addr >= 0xA000 && addr <= 0xBFFF) { 
+        if (m->mbc_ram_enable) {
+            if (m->mbc_bank2 <= 0x03) { // eram
+                return m->eram[(addr - 0xA000) + (0x2000 * m->mbc_bank2)];
+            } else if (m->mbc_bank2 >= 0x08 && m->mbc_bank2 <= 0x0C) { // rtc
+                return 0x00; // implement rtc
+            }
+        }
+        return 0xFF; 
+    }
+    return 0xFF;
+}
+
+// -- MBC5 --
+
+void mbc5_write(Memory* m, uint16_t addr, uint8_t value) {
+    if (addr < 0x2000) {
+        if ((value & 0x0F) == 0x0A) m->mbc_ram_enable = 1;
+        else m->mbc_ram_enable = 0;
+        return;
+    }
+    if (addr < 0x3000) { // lower 8 bits of rom bank
+        m->mbc_bank1 = (m->mbc_bank1 & 0x100) | value;
+        return;
+    }
+    if (addr < 0x4000) { // 9th bit of rom bank
+        m->mbc_bank1 = (m->mbc_bank1 & 0x0FF) | ((value & 1) << 8);
+        return;
+    }
+    if (addr < 0x6000) { // ram bank
+        m->mbc_bank2 = value & 0x0F;
+        return;
+    }
+    if (addr < 0x8000) { // no mode register like mbc1
+        return;
+    }
+    
+    if (addr >= 0xA000 && addr <= 0xBFFF) { 
+        if (m->mbc_ram_enable) {
+            m->eram[(addr - 0xA000) + (0x2000 * m->mbc_bank2)] = value;
+        }
+    }
+}
+
+uint8_t mbc5_read(Memory* m, uint16_t addr) {
+    if (addr < 0x4000) {
+        // lower bank is always 0
+        return m->rom[addr]; 
+    }
+    if (addr < 0x8000) {
+        uint64_t address = m->mbc_bank1 * 0x4000 + (addr - 0x4000);
+        return m->rom[address];
+    }
+    
+    // External RAM
+    if (addr >= 0xA000 && addr <= 0xBFFF) { 
+        if (m->mbc_ram_enable) {
+            return m->eram[(addr - 0xA000) + (0x2000 * m->mbc_bank2)];
+        } else {
+            return 0xFF;
+        }
+    }
+    return 0xFF;
+}
+
+// === DMA HELPER ===
+
+int dma_blocks(Memory* m, uint16_t addr) {
+    if (!m->dma_active) return 0;
+
+    // only block oam writes
+    if (addr >= 0xFE00 && addr <= 0xFE9F) return 1;
+
+    return 0;
+}
+
+// === MAIN MEMORY READ AND WRITE ===
+
+void raw_write(Memory* m, uint16_t addr, uint8_t value) {
+
+    // mbc
+    if (m->mbc_type == 1) {
+        if (addr < 0x8000) mbc1_write(m,addr,value); // rom write
+        if (addr >= 0xA000 && addr <= 0xBFFF) mbc1_write(m,addr,value); // external ram
+    }  
+    else if (m->mbc_type == 3) {
+        if (addr < 0x8000) mbc3_write(m,addr,value); // rom write
+        if (addr >= 0xA000 && addr <= 0xBFFF) mbc3_write(m,addr,value); // external ram / rtc
+    }   
+    else if (m->mbc_type == 5) {
+        if (addr < 0x8000) mbc5_write(m,addr,value); // rom write
+        if (addr >= 0xA000 && addr <= 0xBFFF) mbc5_write(m,addr,value); // external ram
+    } 
 
     // normal memory
     if (addr >= 0x8000 && addr <= 0x9FFF) m->vram[addr - 0x8000] = value;
@@ -195,6 +358,8 @@ void write16(Memory* m, uint16_t addr, uint16_t value) {
     write8(m, addr+1, (uint8_t)((value & 0xFF00) >> 8));
 }
 
+
+
 uint8_t raw_read(Memory *m, uint16_t addr) {
 
     // echo ram
@@ -206,31 +371,22 @@ uint8_t raw_read(Memory *m, uint16_t addr) {
         return m->boot_rom[addr];
     }
 
-    // rom
-    if (addr < 0x4000) {
-        uint8_t bank = 0;
-        if (m->mbc1_mode == 1) bank = m->mbc_bank2 << 5;
-        return m->rom[addr + (0x4000 * bank)];
+    // mbc
+    if (m->mbc_type == 1) {
+        if (addr < 0x8000) return mbc1_read(m,addr);
+        if (addr >= 0xA000 && addr <= 0xBFFF) return mbc1_read(m,addr);
     }
-    if (addr < 0x8000) {
-        uint8_t bank = m->mbc_bank1 + (m->mbc_bank2 << 5);
-        uint64_t address = bank * 0x4000 + (addr - 0x4000);
-        return m->rom[address];
+    else if (m->mbc_type == 3) {
+        if (addr < 0x8000) return mbc3_read(m,addr);
+        if (addr >= 0xA000 && addr <= 0xBFFF) return mbc3_read(m,addr);
     }
-
-    // mbc ram
-    if (addr >= 0xA000 && addr <= 0xBFFF) { // external ram
-        if (m->mbc_ram_enable) {
-            uint8_t ram_bank_no = 0;
-            if (m->mbc1_mode == 1){
-                uint8_t ram_banks = m->ram_size / 0x2000;
-                ram_bank_no = m->mbc_bank2;
-
-                if (m->mbc_bank2 >= ram_banks) ram_bank_no = 0;
-            }
-            return m->eram[(addr - 0xA000) + (0x2000 * ram_bank_no)];
-
-        } else return 0xFF;
+    else if (m->mbc_type == 5) {
+        if (addr < 0x8000) return mbc5_read(m,addr);
+        if (addr >= 0xA000 && addr <= 0xBFFF) return mbc5_read(m,addr);
+    }
+    else {
+        if (addr < 0x8000) return m->rom[addr];
+        if (addr >= 0xA000 && addr <= 0xBFFF) return 0xFF;
     }
 
     // regular memory

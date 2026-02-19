@@ -5,4 +5,4 @@
 *.sav
 
 # include mooneye test roms
-!test/**/*.gb
+/test/

@@ -95,10 +95,12 @@ cd gb
 make
 ```
 
-## Supported Cartridges
+## Supported Cartridge Types
 
 - No MBC (MBC0)
 - MBC1
+- MBC3 (No RTC support)
+- MBC5
 
 ### Compatibility List
 
@@ -115,9 +117,10 @@ make
 | 🟩 | Dr. Mario | No known issues |
 | 🟩 | Legend of Zelda: Link's Awakening | No known issues |
 | 🟩 | Qix | No known issues |
+| 🟩 | Pokemon Red | No known issues |
 | 🟩 | Super Mario Land | No known issues |
 | 🟩 | Super Mario Land 2 | No known issues |
 | 🟩 | Tetris | No known issues |
 | 🟩 | Wario Land | No known issues |
+| 🟩 | Wario Land 2 | No known issues |
 | 🟥 | Alleyway | Skips title screen, doesn't recognise controls in gameplay |
-| 🟥 | Pokemon Red | Graphical issues after title screen |

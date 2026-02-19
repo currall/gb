@@ -81,7 +81,7 @@ uint8_t rl(Registers* reg, uint8_t value) {
 	
 	return value;
 }
-uint8_t rr(Registers* reg, uint8_t value) {
+uint8_t rr2(Registers* reg, uint8_t value) {
 	value >>= 1;
 	if(get_flag(FLAG_C,  reg)) value |= 0x80;
 	
@@ -95,6 +95,25 @@ uint8_t rr(Registers* reg, uint8_t value) {
 	set_flag(FLAG_H, reg, 0);
 	
 	return value;
+}
+uint8_t rr(Registers* reg, uint8_t value) {
+    int old_carry = get_flag(FLAG_C, reg) ? 1 : 0;
+    int new_carry = value & 0x01; // Grab bit 0 BEFORE shifting
+    
+    value >>= 1; // Now shift
+    
+    if(old_carry) value |= 0x80; // Put old carry into bit 7
+    
+    if(new_carry) set_flag(FLAG_C, reg, 1);
+    else set_flag(FLAG_C, reg, 0);
+    
+    if(value) set_flag(FLAG_Z, reg, 0);
+    else set_flag(FLAG_Z, reg, 1);
+    
+    set_flag(FLAG_N,  reg, 0);
+    set_flag(FLAG_H, reg, 0);
+    
+    return value;
 }
 uint8_t sla(Registers* reg, uint8_t value) {
 	if(value & 0x80) set_flag(FLAG_C, reg, 1);
@@ -254,7 +273,7 @@ void sra_h(Registers* reg) {reg->H = sra(reg, reg->H);}
 // 0x2D
 void sra_l(Registers* reg) {reg->L = sra(reg, reg->L);}
 // 0x2E
-void sra_hlp(Registers* reg, Memory* m) {write8(m, reg->HL, sra(reg, reg->HL));}
+void sra_hlp(Registers* reg, Memory* m) {write8(m, reg->HL, sra(reg, read8(m, reg->HL)));}
 // 0x2F
 void sra_a(Registers* reg) {reg->A = sra(reg, reg->A);}
 // 0x30
@@ -457,7 +476,7 @@ void res_1_h(Registers* reg) {reg->H &= ~(1 << 1);}
 // 0x8D
 void res_1_l(Registers* reg) {reg->L &= ~(1 << 1);}
 // 0x8E
-void res_1_hlp(Registers* reg, Memory* m) {write8(m, reg->HL, reg->HL & ~(1 << 1));}
+void res_1_hlp(Registers* reg, Memory* m) {write8(m, reg->HL, read8(m, reg->HL) & ~(1 << 1));}
 // 0x8F
 void res_1_a(Registers* reg) {reg->A &= ~(1 << 1);}
 // 0x90
@@ -473,7 +492,7 @@ void res_2_h(Registers* reg) {reg->H &= ~(1 << 2);}
 // 0x95
 void res_2_l(Registers* reg) {reg->L &= ~(1 << 2);}
 // 0x96
-void res_2_hlp(Registers* reg, Memory* m) {write8(m, reg->HL, reg->HL & ~(1 << 2));}
+void res_2_hlp(Registers* reg, Memory* m) {write8(m, reg->HL, read8(m, reg->HL) & ~(1 << 2));}
 // 0x97
 void res_2_a(Registers* reg) {reg->A &= ~(1 << 2);}
 // 0x98
@@ -489,7 +508,7 @@ void res_3_h(Registers* reg) {reg->H &= ~(1 << 3);}
 // 0x9D
 void res_3_l(Registers* reg) {reg->L &= ~(1 << 3);}
 // 0x9E
-void res_3_hlp(Registers* reg, Memory* m) {write8(m, reg->HL, reg->HL & ~(1 << 3));}
+void res_3_hlp(Registers* reg, Memory* m) {write8(m, reg->HL, read8(m, reg->HL) & ~(1 << 3));}
 // 0x9F
 void res_3_a(Registers* reg) {reg->A &= ~(1 << 3);}
 // 0xA0
@@ -505,7 +524,7 @@ void res_4_h(Registers* reg) {reg->H &= ~(1 << 4);}
 // 0xA5
 void res_4_l(Registers* reg) {reg->L &= ~(1 << 4);}
 // 0xA6
-void res_4_hlp(Registers* reg, Memory* m) {write8(m, reg->HL, reg->HL & ~(1 << 4));}
+void res_4_hlp(Registers* reg, Memory* m) {write8(m, reg->HL, read8(m, reg->HL) & ~(1 << 4));}
 // 0xA7
 void res_4_a(Registers* reg) {reg->A &= ~(1 << 4);}
 // 0xA8
@@ -521,7 +540,7 @@ void res_5_h(Registers* reg) {reg->H &= ~(1 << 5);}
 // 0xAD
 void res_5_l(Registers* reg) {reg->L &= ~(1 << 5);}
 // 0xAE
-void res_5_hlp(Registers* reg, Memory* m) {write8(m, reg->HL, reg->HL & ~(1 << 5));}
+void res_5_hlp(Registers* reg, Memory* m) {write8(m, reg->HL, read8(m, reg->HL) & ~(1 << 5));}
 // 0xAF
 void res_5_a(Registers* reg) {reg->A &= ~(1 << 5);}
 // 0xB0
@@ -537,7 +556,7 @@ void res_6_h(Registers* reg) {reg->H &= ~(1 << 6);}
 // 0xB5
 void res_6_l(Registers* reg) {reg->L &= ~(1 << 6);}
 // 0xB6
-void res_6_hlp(Registers* reg, Memory* m) {write8(m, reg->HL, reg->HL & ~(1 << 6));}
+void res_6_hlp(Registers* reg, Memory* m) {write8(m, reg->HL, read8(m, reg->HL) & ~(1 << 6));}
 // 0xB7
 void res_6_a(Registers* reg) {reg->A &= ~(1 << 6);}
 // 0xB8

@@ -113,10 +113,15 @@ int dma_blocks(Memory* m, uint16_t addr) {
     return 0;
 }
 
+uint16_t get_no_of_banks(Memory* m) { // return number of rom banks
+    if (m->rom_size == 0) return 1; 
+    return (m->rom_size / 0x4000) - 1;
+}
+
 void raw_write(Memory* m, uint16_t addr, uint8_t value) {
 
     if (addr < 0x2000) {
-        if (value & 0x0F) m->mbc_ram_enable = 1;
+        if ((value & 0x0F) == 0x0A) m->mbc_ram_enable = 1;
         else m->mbc_ram_enable = 0;
         return;
     }
@@ -136,19 +141,23 @@ void raw_write(Memory* m, uint16_t addr, uint8_t value) {
 
     if (addr >= 0xA000 && addr <= 0xBFFF) { // external ram
         if (m->mbc_ram_enable) {
-            uint8_t ram_banks = m->ram_size / 0x2000;
-            uint8_t ram_bank_no = m->mbc_bank2;
 
-            if (m->mbc_bank2 >= ram_banks) ram_bank_no = 0;
+            uint8_t ram_bank_no = 0;
+            if (m->mbc1_mode == 1){
+                uint8_t ram_banks = m->ram_size / 0x2000;
+                ram_bank_no = m->mbc_bank2;
+
+                if (m->mbc_bank2 >= ram_banks) ram_bank_no = 0;
+            }
             m->eram[(addr - 0xA000) + (0x2000 * ram_bank_no)] = value;
 
-        } else m->eram[addr - 0xA000] = value;
+        }
     }
 
     // normal memory
     if (addr >= 0x8000 && addr <= 0x9FFF) m->vram[addr - 0x8000] = value;
     if (addr >= 0xC000 && addr <= 0xDFFF) m->wram[addr - 0xC000] = value;
-    if (addr >= 0xE000 && addr <= 0xFDFF) m->wram[addr - 0xC000] = value; // echo ram
+    if (addr >= 0xE000 && addr <= 0xFDFF) m->wram[addr - 0xE000] = value; // echo ram
     if (addr >= 0xFE00 && addr <= 0xFE9F) m->oam[addr - 0xFE00] = value;
     if (addr >= 0xFF00 && addr <= 0xFF7F) m->io[addr - 0xFF00] = value;
     if (addr >= 0xFF80 && addr <= 0xFFFE) m->hram[addr - 0xFF80] = value;
@@ -217,13 +226,16 @@ uint8_t raw_read(Memory *m, uint16_t addr) {
     // mbc ram
     if (addr >= 0xA000 && addr <= 0xBFFF) { // external ram
         if (m->mbc_ram_enable) {
-            uint8_t ram_banks = m->ram_size / 0x2000;
-            uint8_t ram_bank_no = m->mbc_bank2;
+            uint8_t ram_bank_no = 0;
+            if (m->mbc1_mode == 1){
+                uint8_t ram_banks = m->ram_size / 0x2000;
+                ram_bank_no = m->mbc_bank2;
 
-            if (m->mbc_bank2 >= ram_banks) ram_bank_no = 0;
+                if (m->mbc_bank2 >= ram_banks) ram_bank_no = 0;
+            }
             return m->eram[(addr - 0xA000) + (0x2000 * ram_bank_no)];
 
-        } else return m->eram[addr - 0xA000];
+        } else return 0xFF;
     }
 
     // regular memory

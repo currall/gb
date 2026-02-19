@@ -30,8 +30,9 @@ main.exe PATH_TO_GAME
 | **R** | Restart Game |
 | *Debug Logging*|
 | **L** | Enable per-frame debug output log |
+| **Shift + L** | Enable per-cycle debug output log |
 | **M** | Print memory to output log |
-| **Right Shift** | Enable per-cycle output log |
+| **Hold Right Shift** | Print per-cycle output log while holding |
 | *Speed* |
 | **F** | Fast-Forward (disables wait between each frame) |
 | **N** | Run until next frame |
@@ -41,7 +42,18 @@ main.exe PATH_TO_GAME
 | **V** | Toggle VRAM Display Window |
 | **0-9** | Select color palette |
 
-
+| Hotkey | Palette |
+| - | - |
+| 1 | Monochrome Grey |
+| 2 | Game specific palette (if available) |
+| 3 | DMG Game Boy Green |
+| 4 | Monochrome Pink |
+| 5 | Yellow and Red (Tetris) |
+| 6 | Mario Land 2 |
+| 7 | Wario Land |
+| 8 | Blue and Red (Dr. Mario) |
+| 9 | Lime Green and Pink |
+| 0 | Black and Yellow (Inverted) |
 
 ## Features
 
@@ -51,6 +63,7 @@ main.exe PATH_TO_GAME
 - Pause
 - Frame Stepping
 - Fast-Forward
+- Game Boy Color palette colorisation
 
 ## Building
 
@@ -93,17 +106,17 @@ make
 | Code | Compatibility |
 | - | - |
 | 🟩 | No known issues |
-| 🟦 | Minor issues but gameplay is correct |
+| 🟨 | Minor issues but gameplay is correct |
 | 🟥 | Gameplay does not start |
 
 | | Game Title | Issues |
 | - | - | - |
-| 🟩 | Dr. Mario | No issues |
-| 🟩 | Super Mario Land 2 | No issues |
-| 🟦 | Super Mario Land | Freezes on game over |
-| 🟦 | Tetris | Freezes on pause screen |
+| 🟩 | Dr. Mario | No known issues |
+| 🟩 | Legend of Zelda: Link's Awakening | No known issues |
+| 🟩 | Qix | No known issues |
+| 🟩 | Super Mario Land | No known issues |
+| 🟩 | Super Mario Land 2 | No known issues |
+| 🟩 | Tetris | No known issues |
+| 🟩 | Wario Land | No known issues |
 | 🟥 | Alleyway | Skips title screen, doesn't recognise controls in gameplay |
-| 🟥 | Legend of Zelda: Link's Awakening | Breaks after leaving first area |
-| 🟥 | Pokemon Red | Loads copyright screen, doesn't load to title screen |
-| 🟥 | Wario Land | Crashes emulator after selecting save file |
-| 🟥 | Wario Land 2 | Doesn't load |
+| 🟥 | Pokemon Red | Graphical issues after title screen |

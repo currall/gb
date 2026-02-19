@@ -10,10 +10,13 @@
 #include "header.h"
 
 typedef enum {
-    ID_DR_MARIO      = 0x3C,
-    ID_MARIO_LAND    = 0x46,
-    ID_MARIO_LAND_2  = 0xC9,
-    ID_TETRIS        = 0xDB
+    ID_DR_MARIO     = 0x3C,
+    ID_MARIO_LAND   = 0x46,
+    ID_MARIO_LAND_2 = 0xC9,
+    ID_QIX          = 0xF2,
+    ID_TETRIS       = 0xDB,
+    ID_WARIO_LAND   = 0x59,
+    ID_ZELDA        = 0x70,
 } GameID;
 
 uint8_t encode_title(uint8_t* title) {
@@ -64,7 +67,7 @@ char* read_rom(char* file, Memory* m, Status* s){
     print_header(h);
 
     m->ram_size = get_ram_size(h.RAMSize); // get number of bytes in external ram
-    printf("ram size (b): %d\n",m->ram_size);
+    printf("ram size (b): 0x%x\n",m->ram_size);
 
     // mbc hardware handling
     m->cartridge_type = h.CartridgeType;
@@ -74,13 +77,17 @@ char* read_rom(char* file, Memory* m, Status* s){
 
     // gbc palette selection
     uint8_t game_id = encode_title(h.ROMName);
+    printf("Game ID: %x",game_id);
 
     switch(game_id) {
-        case ID_DR_MARIO:       s->palette_no = 7; break; 
-        case ID_MARIO_LAND:     s->palette_no = 5; break; 
-        case ID_MARIO_LAND_2:   s->palette_no = 6; break; 
-        case ID_TETRIS:         s->palette_no = 4; break; 
-        default:                s->palette_no = 0; break;
+        case ID_DR_MARIO:       s->game_palette = PALETTE_DR_MARIO; break; 
+        case ID_MARIO_LAND:     s->game_palette = PALETTE_MARIOLAND; break; 
+        case ID_MARIO_LAND_2:   s->game_palette = PALETTE_MARIOLAND2; break; 
+        case ID_QIX:            s->game_palette = PALETTE_TETRIS; break; 
+        case ID_TETRIS:         s->game_palette = PALETTE_TETRIS; break; 
+        case ID_WARIO_LAND:     s->game_palette = PALETTE_WARIOLAND; break; 
+        case ID_ZELDA:          s->game_palette = PALETTE_ZELDA; break; 
+        default:                s->game_palette = PALETTE_BW; break;
     }
 
 	return file;

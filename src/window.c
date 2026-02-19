@@ -8,18 +8,6 @@ static SDL_Renderer* renderer = NULL;
 static SDL_Texture*  texture  = NULL;
 uint32_t window_id = 0;
 
-typedef enum {
-    P_BLACK_AND_WHITE = 0,
-    P_RED = 0,
-    P_GREEN = 0,
-    P_BLUE = 0,
-    P_MARIO_LAND = 0,
-    P_MARIO_LAND_2 = 0,
-    P_DR_MARIO = 0,
-    P_PINK = 0,
-    P_DMG_GREEN = 0
-} GamePalettes;
-
 int window_init(char* file) {
     if (SDL_Init(SDL_INIT_VIDEO) != 0)
         return 0;
@@ -159,7 +147,10 @@ void check_events(Status* s, Memory* m){
 			// logging
 			if (key == SDLK_l){
 				if(!s->print_frame) print_table_header(s); 
-				s->print_frame = !s->print_frame;}
+			
+				if (mods & KMOD_LSHIFT) s->print_cycle = !s->print_cycle; 
+				else s->print_frame = !s->print_frame; 
+			}
 			if (key == SDLK_m) 
 				s->print_memory = 1;
 			// speed
@@ -170,16 +161,16 @@ void check_events(Status* s, Memory* m){
 				s->show_vram_viewer = !s->show_vram_viewer;
 			// palette
 			switch (key) {
-				case SDLK_1: s->palette_no = 0; break;
-				case SDLK_2: s->palette_no = 1; break;
-				case SDLK_3: s->palette_no = 2; break;
-				case SDLK_4: s->palette_no = 3; break;
-				case SDLK_5: s->palette_no = 4; break;
-				case SDLK_6: s->palette_no = 5; break;
-				case SDLK_7: s->palette_no = 6; break;
-				case SDLK_8: s->palette_no = 7; break;
-				case SDLK_9: s->palette_no = 8; break;
-				case SDLK_0: s->palette_no = 9; break;
+				case SDLK_1: s->palette_no = PALETTE_BW; break; // black and white
+				case SDLK_2: s->palette_no = s->game_palette; break; // game specific palette
+				case SDLK_3: s->palette_no = PALETTE_DMG; break;
+				case SDLK_4: s->palette_no = PALETTE_PINK; break;
+				case SDLK_5: s->palette_no = PALETTE_TETRIS; break;
+				case SDLK_6: s->palette_no = PALETTE_MARIOLAND2; break;
+				case SDLK_7: s->palette_no = PALETTE_WARIOLAND; break;
+				case SDLK_8: s->palette_no = PALETTE_DR_MARIO; break;
+				case SDLK_9: s->palette_no = PALETTE_1C; break;
+				case SDLK_0: s->palette_no = PALETTE_INVERTED; break;
 			}
 
 		} 

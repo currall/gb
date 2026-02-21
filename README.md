@@ -4,11 +4,19 @@ Nintendo Game Boy emulator written in C
 
 ## Usage
 
-Launch emulator using:
+Launch emulator, and select Game Boy ROM through file picker.
+
+Alternatively, launch emulator using:
 ```
 main.exe PATH_TO_GAME
 ```
-(if not path is given, runs `test.gb` from emulator directory)
+
+### BIOS
+
+Emulator requires Nintendo Game Boy boot ROM in the executable directory, named: 
+```
+dmg_boot.bin
+```
 
 ### Controls
 

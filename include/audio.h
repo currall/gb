@@ -31,6 +31,11 @@ typedef enum {
     NR43 = 0x22,
     NR44 = 0x23,
 
+    // global control registers
+    NR50 = 0x24,
+    NR51 = 0x25,
+    NR52 = 0x26,
+
 } AudioRegisters;
 
 #define SAMPLE_RATE 44100 // 44.1KHz audio

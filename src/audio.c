@@ -114,11 +114,15 @@ void clock_envelope(Envelope* env) {
 }
 
 // mutes audio if it exceeds its length
-void clock_length(int* timer, int* length_enabled, int* channel_enabled) {
-    if (*length_enabled && *timer > 0) {
-        (*timer)--;
-        if (*timer == 0) {
-            *channel_enabled = 0;
+void clock_length(Channel* ch, uint8_t* nr52) {
+    if (ch->length_enabled && ch->timer > 0) {
+        (ch->timer)--;
+        if (ch->timer == 0) {
+            ch->enabled = 0;
+
+            // clear the channel bit in nr52
+            uint8_t mask = ~(1 << (ch->ch_number - 1));
+            *nr52 &= mask;
         }
     }
 }
@@ -207,9 +211,15 @@ int get_sample(Channel* ch, Memory* m, int cycles) {
     }
 }
 
-void detect_trigger(Channel* ch) {
+void detect_trigger(Channel* ch, uint8_t* nr52) {
 
     if (*ch->nrx4 & 0x80) { // bit 7 of NRx4 triggers the channel
+        
+        if (ch->ch_number == 1) *nr52 |= 0x01;
+        if (ch->ch_number == 2) *nr52 |= 0x02;
+        if (ch->ch_number == 3) *nr52 |= 0x04;
+        if (ch->ch_number == 4) *nr52 |= 0x08;
+
         trigger(ch); 
 
         // enable length
@@ -231,10 +241,10 @@ void audio_step(Audio* a, Memory* m, int cycles) {
     if (!a->device) return; // skip if no audio device
 
     // detect triggers
-    detect_trigger(&a->ch1);
-    detect_trigger(&a->ch2);
-    detect_trigger(&a->ch3);
-    detect_trigger(&a->ch4);
+    detect_trigger(&a->ch1, &m->io[NR52]);
+    detect_trigger(&a->ch2, &m->io[NR52]);
+    detect_trigger(&a->ch3, &m->io[NR52]);
+    detect_trigger(&a->ch4, &m->io[NR52]);
 
     // step the frame sequencer
     a->frame_seq_timer -= cycles;
@@ -243,10 +253,10 @@ void audio_step(Audio* a, Memory* m, int cycles) {
 
         // tick length counters on even steps
         if (a->frame_seq_step % 2 == 0) {
-            clock_length(&a->ch1.length_timer, &a->ch1.length_enabled, &a->ch1.enabled);
-            clock_length(&a->ch2.length_timer, &a->ch2.length_enabled, &a->ch2.enabled);
-            clock_length(&a->ch3.length_timer, &a->ch3.length_enabled, &a->ch3.enabled);
-            clock_length(&a->ch4.length_timer, &a->ch4.length_enabled, &a->ch4.enabled);
+            clock_length(&a->ch1, &m->io[NR52]);
+            clock_length(&a->ch2, &m->io[NR52]);
+            clock_length(&a->ch3, &m->io[NR52]);
+            clock_length(&a->ch4, &m->io[NR52]);
         }
 
         // volume envelopes on step 7
@@ -268,12 +278,12 @@ void audio_step(Audio* a, Memory* m, int cycles) {
 
         if (a->ch1.enabled) {
             float volume = (a->ch1.env.volume / 15.0f);
-            if (!get_sample(&a->ch1, m, CYCLES_PER_SAMPLE)) volume =- volume;
+            if (!get_sample(&a->ch1, m, CYCLES_PER_SAMPLE)) volume = -volume;
             sample += volume;
         }
         if (a->ch2.enabled) {
             float volume = (a->ch2.env.volume / 15.0f);
-            if (!get_sample(&a->ch2, m, CYCLES_PER_SAMPLE)) volume =- volume;
+            if (!get_sample(&a->ch2, m, CYCLES_PER_SAMPLE)) volume = -volume;
             sample += volume;
         }
         if (a->ch3.enabled) {
@@ -282,7 +292,7 @@ void audio_step(Audio* a, Memory* m, int cycles) {
         }
         if (a->ch4.enabled) {
             float volume = (a->ch4.env.volume / 15.0f);
-            if (!get_sample(&a->ch4, m, CYCLES_PER_SAMPLE)) volume =- volume;
+            if (!get_sample(&a->ch4, m, CYCLES_PER_SAMPLE)) volume = -volume;
             sample += volume;
         }
         

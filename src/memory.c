@@ -303,6 +303,10 @@ void raw_write(Memory* m, uint16_t addr, uint8_t value) {
         if (addr < 0x8000) mbc1_write(m,addr,value); // rom write
         if (addr >= 0xA000 && addr <= 0xBFFF) mbc1_write(m,addr,value); // external ram
     }  
+    else if (m->mbc_type == 2) {
+        if (addr < 0x8000) mbc1_write(m,addr,value); // rom write
+        if (addr >= 0xA000 && addr <= 0xBFFF) mbc1_write(m,addr,value); // external ram
+    } 
     else if (m->mbc_type == 3) {
         if (addr < 0x8000) mbc3_write(m,addr,value); // rom write
         if (addr >= 0xA000 && addr <= 0xBFFF) mbc3_write(m,addr,value); // external ram / rtc
@@ -327,16 +331,19 @@ void write8(Memory* m, uint16_t addr, uint8_t value) {
     if (addr == 0xFF00) { // input
         raw_write(m,0xFF00, (raw_read(m,0xFF00) & 0xCF) | (value & 0x30) );
     }
-    
+
     if (addr == 0xFF02) {
-        if (value & 0x80) { // bit 7 triggers transfer
+        if ((value & 0x81) == 0x81) { // check bits 0 (master) and 7 (trigger)
             write8(m, 0xFF01, 0xFF); // set to all 1s
             value &= ~0x80; // clear transfer flag
             
             //serial interrupt
             uint8_t iflags = read8(m, 0xFF0F);
             write8(m, 0xFF0F, iflags | 0x08); 
-        }
+        } 
+        // If value == 0x80 (Slave mode), we do absolutely nothing.
+        // The transfer flag stays high and no interrupt fires.
+        
         raw_write(m, addr, value);
         return;
     }
@@ -383,6 +390,10 @@ uint8_t raw_read(Memory *m, uint16_t addr) {
 
     // mbc
     if (m->mbc_type == 1) {
+        if (addr < 0x8000) return mbc1_read(m,addr);
+        if (addr >= 0xA000 && addr <= 0xBFFF) return mbc1_read(m,addr);
+    }
+    else if (m->mbc_type == 2) {
         if (addr < 0x8000) return mbc1_read(m,addr);
         if (addr >= 0xA000 && addr <= 0xBFFF) return mbc1_read(m,addr);
     }

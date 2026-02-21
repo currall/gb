@@ -4,6 +4,6 @@
 
 #include <stdint.h>
 
-void dma_step(Memory* m);
+void dma_step(Memory* m, int cycles);
 
 #endif

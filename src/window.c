@@ -65,7 +65,7 @@ void joypad_set_button(Memory* m, uint8_t mask, int pressed, int is_button_group
     uint8_t after = *group;
 
     if ((before & ~after) != 0) {
-		printf("[INPUT] Joypad input detected!\n");
+		//printf("[INPUT] Joypad input detected!\n");
 		uint8_t iflags = read8(m, 0xFF0F);
 		write8(m, 0xFF0F, iflags | 0x10);
     }

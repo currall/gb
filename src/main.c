@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include "audio.h"
 #include "cpu.h"
 #include "debug.h"
 #include "dma.h"
@@ -15,17 +16,18 @@
 #include "vram_window.h"
 #include "window.h"
 
-#define CPU_HZ 		4194304
-#define FPS			60
+#define CPU_HZ 	4194304
+#define FPS		60
 
-char* gb_init(char* file, Registers* reg, Memory* m, Status* s) {
+char* gb_init(char* file, Registers* reg, Memory* m, Status* s, Audio* audio) {
 	
-	file = read_rom(file,m,s); // read into memory
 	read_boot_ROM("dmg_boot.bin",&m->boot_rom); // read boot rom into boot rom memory
+	file = read_rom(file,m,s); // read into memory
 	
 	cpu_init(reg);
 	mem_init(m);
 	status_init(s);
+	audio_init(audio, m);
 
 	if (m->ram_size > 0) load_game(file,m->eram,m->ram_size); // attempt to load save file
 
@@ -39,13 +41,14 @@ int main(int argc, char *argv[]) {
 	PPU ppu; // pixel processing unit (gpu)
 	Memory m = {0}; // memory
 	Status s = {0}; // debug emualtor status
+	Audio audio = {0}; // audio
 
 	char* file = 0;
 	if (argc>1) // read rom from arg if possible
         file = argv[1];
 	
 	// init system
-	file = gb_init(file, &reg, &m, &s);
+	file = gb_init(file, &reg, &m, &s, &audio);
 	
 	// debug output
 	if (s.print_memory) {print_memory(&m); s.print_memory=0;};
@@ -61,6 +64,7 @@ int main(int argc, char *argv[]) {
 	
 	// cpu loop
 	clock_t frame_start = clock();
+	clock_t second_count = clock();
 	if (PRINT_DEBUG) printf("[MAIN] cpu cycle start\n");
 	
 	while(s.running){ // main loop
@@ -73,14 +77,14 @@ int main(int argc, char *argv[]) {
 		if (s.print_cycle) {print_cycle(&reg,&m,&s); check_events(&s,&m);} // check events during per-instruction debug so it can turn off
 		if (s.print_memory) {print_memory(&m); s.print_memory=0;};
 		
-		for (int i = 0; i < c; i++) {
-			dma_step(&m);
-			ppu_step(&ppu,&m, &s);
-			timer_step(&m);
-			if (ppu_frame_ready(&ppu)) {
-				window_update(ppu_get_framebuffer(&ppu));
-				ppu.frame_ready = 0;
-			}
+		dma_step(&m, c);
+		ppu_step(&ppu,&m, &s, c);
+		timer_step(&m, c);
+		audio_step(&audio, &m, c);
+
+		if (ppu_frame_ready(&ppu)) {
+			window_update(ppu_get_framebuffer(&ppu));
+			ppu.frame_ready = 0;
 		}
 		
 		// pause
@@ -111,11 +115,13 @@ int main(int argc, char *argv[]) {
 			// restart
 			if (s.restart_triggered) {
 				s.restart_triggered = 0;
-				gb_init(file, &reg, &m, &s);
+				if (m.ram_size > 0) save_game(file, m.eram, m.ram_size); // save before resetting	
+				gb_init(file, &reg, &m, &s, &audio);
 			}
 			if (s.new_game) {
 				s.new_game = 0;
-				gb_init(0, &reg, &m, &s);
+				if (m.ram_size > 0) save_game(file, m.eram, m.ram_size); // save before new game
+				gb_init(0, &reg, &m, &s, &audio);
 			}
 
 			// debug
@@ -136,13 +142,23 @@ int main(int argc, char *argv[]) {
 			// reset frame cycle counter
 			s.frame_tracker = 0;
 			frame_start = clock();
+		}
+
+		// check if 1 second has passed
+		if (s.second_tracker > CPU_HZ){ // code to run per emulated second
+
+			uint64_t ticks = clock() - second_count;
+			double ms = (double)ticks * 1000.0 / CLOCKS_PER_SEC;
+			double percentage = (1000.0 / ms) * 100.0;
+			double fps = 60 * (1000.0 / ms);
+			second_count = clock();
+			s.total_seconds++;
+
+			if (PRINT_DEBUG)
+				printf("[TIME] %d seconds passed [took %.0fms: %.2f%%] [FPS: %.2f]\n",
+					s.total_seconds, ms, percentage, fps);
 			
-			// check if 1 second has passed
-			if (s.second_tracker > CPU_HZ){
-				s.total_seconds++;
-				if (PRINT_DEBUG) printf("[TIME] %d seconds passed\n", s.total_seconds);
-				s.second_tracker = 0;
-			}
+			s.second_tracker = 0;
 		}
 	}
 

@@ -1,8 +1,6 @@
 /.vscode/
 /build/*.o
+/test/
 *.exe
 *.gb
 *.sav
-
-# include mooneye test roms
-/test/

@@ -11,6 +11,6 @@
 #define TMA 0xFF06
 #define TAC 0xFF07
 
-void timer_step(Memory* m);
+void timer_step(Memory* m, int cycles);
 
 #endif

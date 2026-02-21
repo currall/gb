@@ -327,9 +327,19 @@ void write8(Memory* m, uint16_t addr, uint8_t value) {
     if (addr == 0xFF00) { // input
         raw_write(m,0xFF00, (raw_read(m,0xFF00) & 0xCF) | (value & 0x30) );
     }
-		
-	//if (addr == 0xFF01) printf("[SERIAL] %c\n", value); // serial output
-	//if (addr == 0xFF02) printf("[SERIAL] %c\n", value); // serial output
+    
+    if (addr == 0xFF02) {
+        if (value & 0x80) { // bit 7 triggers transfer
+            write8(m, 0xFF01, 0xFF); // set to all 1s
+            value &= ~0x80; // clear transfer flag
+            
+            //serial interrupt
+            uint8_t iflags = read8(m, 0xFF0F);
+            write8(m, 0xFF0F, iflags | 0x08); 
+        }
+        raw_write(m, addr, value);
+        return;
+    }
 	
 	if (addr == 0xFF04) {
 		m->div_counter = 0;
@@ -406,6 +416,7 @@ uint8_t read8(Memory* m, uint16_t addr) {
 	
 	// read rules
 	//if (addr == 0xFF00) return 0xCF; // block input
+    if (addr == 0xFF01) return 0xFF;
 	if (addr == 0xFF04) return m->div_counter >> 8; // div counter
 	if (addr == 0xFF07) return raw_read(m,0xFF07) | 0xF8; // timer
 

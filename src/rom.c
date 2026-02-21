@@ -10,12 +10,15 @@
 #include "header.h"
 
 typedef enum {
+    ID_ALLEYWAY     = 0x88,
     ID_DR_MARIO     = 0x3C,
     ID_MARIO_LAND   = 0x46,
     ID_MARIO_LAND_2 = 0xC9,
+    ID_POKEMONRED   = 0x14,
     ID_QIX          = 0xF2,
     ID_TETRIS       = 0xDB,
     ID_WARIO_LAND   = 0x59,
+    ID_WARIO_LAND2  = 0xD3,
     ID_ZELDA        = 0x70,
 } GameID;
 
@@ -78,12 +81,15 @@ char* read_rom(char* file, Memory* m, Status* s){
     printf("Game ID: %x\n",game_id);
 
     switch(game_id) {
+        case ID_ALLEYWAY:       s->game_palette = PALETTE_ALLEYWAY; break; 
         case ID_DR_MARIO:       s->game_palette = PALETTE_DR_MARIO; break; 
         case ID_MARIO_LAND:     s->game_palette = PALETTE_MARIOLAND; break; 
         case ID_MARIO_LAND_2:   s->game_palette = PALETTE_MARIOLAND2; break; 
+        case ID_POKEMONRED:     s->game_palette = PALETTE_POKEMONRED; break; 
         case ID_QIX:            s->game_palette = PALETTE_TETRIS; break; 
         case ID_TETRIS:         s->game_palette = PALETTE_TETRIS; break; 
         case ID_WARIO_LAND:     s->game_palette = PALETTE_WARIOLAND; break; 
+        case ID_WARIO_LAND2:    s->game_palette = PALETTE_WARIOLAND2; break; 
         case ID_ZELDA:          s->game_palette = PALETTE_ZELDA; break; 
         default:                s->game_palette = PALETTE_BW; break;
     }

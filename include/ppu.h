@@ -32,7 +32,7 @@ typedef struct {
 } PPU;
 
 void ppu_init(PPU* ppu, Memory* m);
-void ppu_step(PPU* ppu, Memory* m, Status* s);
+void ppu_step(PPU* ppu, Memory* m, Status* s, int cycles);
 int  ppu_frame_ready(PPU* ppu);
 uint32_t* ppu_get_framebuffer(PPU* ppu);
 void clear_framebuffer();

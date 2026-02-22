@@ -58,6 +58,7 @@ typedef struct Memory {
 	
 } Memory;
 
+void mem_boot(Memory* m);
 void mem_init(Memory* m);
 
 void raw_write(Memory* m, uint16_t addr, uint8_t value);

@@ -1,6 +1,8 @@
 /.vscode/
 /build/*.o
 /test/
+
+main
 *.exe
 *.gb
 *.sav

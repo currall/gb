@@ -18,10 +18,10 @@ uint32_t get_file_size(FILE* f) {
     uint32_t file_size = (uint32_t)size;
 }
 
-uint32_t load_file(char* file, uint8_t** m) {
+uint32_t load_file(char* file, uint8_t** m, int warn) {
     FILE* f = fopen(file, "rb");
     if (!f) {
-        perror("Failed to open file");
+        if (warn) perror("Failed to open file");
         return 0;
     }
 
@@ -29,7 +29,7 @@ uint32_t load_file(char* file, uint8_t** m) {
 
     *m = (uint8_t*)malloc(file_size);
     if (!*m) {
-        perror("Failed to allocate memory");
+        if (warn) perror("Failed to allocate memory");
         fclose(f);
         return 0;
     }
@@ -39,7 +39,7 @@ uint32_t load_file(char* file, uint8_t** m) {
     fclose(f);
 
     if (read_count != file_size) {
-        printf("Error: Read partial file (Expected %d, got %d)\n", file_size, read_count);
+        if (warn) printf("Error: Read partial file (Expected %d, got %d)\n", file_size, read_count);
         free(*m);
         *m = NULL;
         return 0;
@@ -98,11 +98,11 @@ void load_game(char* file, uint8_t* eram, uint32_t ram_size) {
         free(savefile);
         return;
     }
-
+    
     fread(eram, sizeof(uint8_t), ram_size, fp); // read data
+    printf("[FILE] Loaded save file: %s (%d bytes)\n", savefile, ram_size);
     fclose(fp);
     free(savefile);
 
-    printf("[FILE] Loaded save file: %s (%d bytes)\n", savefile, ram_size);
 
 }

@@ -63,7 +63,7 @@ char* read_rom(char* file, Memory* m, Status* s){
         for (size_t i = 0; i < size; i++) m->rom[i] = 0xFF;
     }
 
-	m->rom_size = load_file(file,&m->rom); // load file to "file" and return rom size in bytes
+	m->rom_size = load_file(file,&m->rom,1); // load file to "file" and return rom size in bytes
 	
     // read header info
     Header h = read_header(m);
@@ -98,8 +98,9 @@ char* read_rom(char* file, Memory* m, Status* s){
 
 }
 
-void read_boot_ROM(char* file, uint8_t** m){
-	load_file(file,m);
+int read_boot_ROM(char* file, uint8_t** m){
+	uint32_t boot_rom_size = load_file(file,m,0);
+    return boot_rom_size;
 }
 
 

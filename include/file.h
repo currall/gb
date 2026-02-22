@@ -4,7 +4,7 @@
 
 #include <stdint.h>
 
-int load_file(char* file, uint8_t** m);
+uint32_t load_file(char* file, uint8_t** m, int warn);
 
 // game save functions
 

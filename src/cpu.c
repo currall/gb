@@ -1061,7 +1061,7 @@ void cpu_init(Registers* reg) {
 	reg->DE = 0x00D8;
 	reg->HL = 0x014D;
 	reg->AF = 0x01B0;
-	reg->PC = 0;
+	reg->PC = 0x0100;
 	reg->SP = 0xFFFE; // stack starts at top of memory
 	
 	reg->IME = 0;

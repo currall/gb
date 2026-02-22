@@ -57,6 +57,8 @@ typedef struct {
     int length_timer;
     int length_enabled;
 
+    int sweep_timer; // channel 1 sweep
+
     // pointers to channel registers
     uint8_t* nrx0;
     uint8_t* nrx1;

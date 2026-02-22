@@ -20,27 +20,8 @@ uint8_t get_mbc_type(uint8_t cartridge_type) {
     return mbc;
 }
 
-void mem_init(Memory* m) {
-
-    // default memory to high
-    for (int i = 0; i < 0x2000; i++) {
-        m->vram[i] = 0xFF;
-        m->wram[i] = 0xFF;
-    }
-    for (int i = 0; i < 0xA0; i++) m->oam[i] = 0xFF;
-    for (int i = 0; i < 0x80; i++) m->io[i] = 0xFF;
-    for (int i = 0; i < 0x7F; i++) m->hram[i] = 0xFF;
-    m->ie = 0xFF;
-
-    // -- MBC ---
-    m->mbc_type = get_mbc_type(m->cartridge_type);
-	m->mbc_bank1 = 1;
-	m->mbc_bank2 = 0;
-    m->mbc_ram_enable = 0;
-
-    m->mbc1_mode = 0;
-	
-	// --- Joypad ---
+void mem_boot(Memory* m) {
+    // --- Joypad ---
     m->io[0x00] = 0xCF;
     m->j.dpad = 0x0F;
     m->j.buttons = 0x0F;
@@ -77,7 +58,7 @@ void mem_init(Memory* m) {
 
     m->io[0x24] = 0x77;
     m->io[0x25] = 0xF3;
-    m->io[0x26] = 0xF1; // NR52
+    m->io[0x26] = 0xF1;
 
     // --- PPU ---
     m->io[0x40] = 0x91; // LCDC
@@ -91,6 +72,39 @@ void mem_init(Memory* m) {
     m->io[0x49] = 0xFF; // OBP1
     m->io[0x4A] = 0x00; // WY
     m->io[0x4B] = 0x00; // WX
+    
+    // --- Boot ROM ---
+    m->boot_rom_enabled = 0;
+}
+
+void mem_init(Memory* m) {
+
+    // default memory to high
+    for (int i = 0; i < 0x2000; i++) {
+        m->vram[i] = 0x00; // vram defaults to 0
+        m->wram[i] = 0xFF;
+    }
+    for (int i = 0; i < 0xA0; i++) m->oam[i] = 0x00;
+    for (int i = 0; i < 0x80; i++) m->io[i] = 0xFF;
+    for (int i = 0; i < 0x7F; i++) m->hram[i] = 0xFF;
+    m->ie = 0xFF;
+
+    // --- Joypad ---
+    m->io[0x00] = 0xCF;
+    m->j.dpad = 0x0F;
+    m->j.buttons = 0x0F;
+
+    // --- Interrupts ---
+    m->io[0x0F] = 0x00; // IF
+    m->ie = 0x00; // IE
+    
+    // -- MBC ---
+    m->mbc_type = get_mbc_type(m->cartridge_type);
+	m->mbc_bank1 = 1;
+	m->mbc_bank2 = 0;
+    m->mbc_ram_enable = 0;
+
+    m->mbc1_mode = 0;
 
     // --- Boot ROM ---
     m->boot_rom_enabled = 1;

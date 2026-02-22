@@ -91,6 +91,8 @@ void trigger(Channel* ch) {
     ch->enabled = 1;
     // channel 3
     if (ch->ch_number == 3) {ch->var = 0; return;} // restart wave playback. returns since ch3 has no envelope
+    // all other channels
+    if (ch->ch_number == 1) {ch->sweep_timer = *ch->nrx0;}
     if (ch->ch_number == 4) {ch->var = 0x7FFF;} // 15-bits of 1s, otherwise silence
     trigger_envelope(&ch->env, ch->nrx2);
 }
@@ -115,9 +117,9 @@ void clock_envelope(Envelope* env) {
 
 // mutes audio if it exceeds its length
 void clock_length(Channel* ch, uint8_t* nr52) {
-    if (ch->length_enabled && ch->timer > 0) {
-        (ch->timer)--;
-        if (ch->timer == 0) {
+    if (ch->length_enabled && ch->length_timer > 0) {
+        (ch->length_timer)--;
+        if (ch->length_timer == 0) {
             ch->enabled = 0;
 
             // clear the channel bit in nr52
@@ -185,7 +187,7 @@ int get_sample(Channel* ch, Memory* m, int cycles) {
         int shift = *ch->nrx3 >> 4;
         int divisor_code = *ch->nrx3 & 0x07;
         int divisor = (divisor_code == 0) ? 8 : (divisor_code * 16);
-        int period = (divisor << shift) * 2; 
+        int period = (divisor << shift); 
 
         ch->timer -= cycles;
         while (ch->timer <= 0) {
@@ -227,8 +229,14 @@ void detect_trigger(Channel* ch, uint8_t* nr52) {
         else ch->length_enabled = 0;
 
         int max_length = 64;
-        if (ch->ch_number == 3) max_length = 256;
-        if (ch->length_timer == 0) ch->length_timer = max_length - (*ch->nrx1 & 0x3F);
+        int length_data = *ch->nrx1 & 0x3F;
+
+        if (ch->ch_number == 3) {
+            max_length = 256;
+            length_data = *ch->nrx1; 
+        }
+
+        if (ch->length_timer == 0) ch->length_timer = max_length - length_data;
 
         // set reg to 1s
         *ch->nrx4 &= 0x7F;
@@ -274,37 +282,46 @@ void audio_step(Audio* a, Memory* m, int cycles) {
     while (a->sample_timer <= 0) {
         a->sample_timer += CYCLES_PER_SAMPLE;
 
-        float sample = 0.0f;
+        // separate left and right samples
+        float sample_l = 0.0f;
+        float sample_r = 0.0f;
+        uint8_t nr51 = m->io[NR51];
 
         if (a->ch1.enabled) {
             float volume = (a->ch1.env.volume / 15.0f);
             if (!get_sample(&a->ch1, m, CYCLES_PER_SAMPLE)) volume = -volume;
-            sample += volume;
+            if (nr51 & 0x10) sample_l += volume; // Mix to Left
+            if (nr51 & 0x01) sample_r += volume; // Mix to Right
         }
         if (a->ch2.enabled) {
             float volume = (a->ch2.env.volume / 15.0f);
             if (!get_sample(&a->ch2, m, CYCLES_PER_SAMPLE)) volume = -volume;
-            sample += volume;
+            if (nr51 & 0x20) sample_l += volume;
+            if (nr51 & 0x02) sample_r += volume;
         }
         if (a->ch3.enabled) {
             float wave = get_sample(&a->ch3, m, CYCLES_PER_SAMPLE);
-            sample += (wave / 7.5f) - 1.0f;
+            float ch3_out = (wave / 7.5f) - 1.0f;
+            if (nr51 & 0x40) sample_l += ch3_out;
+            if (nr51 & 0x04) sample_r += ch3_out;
         }
         if (a->ch4.enabled) {
-            float volume = (a->ch4.env.volume / 15.0f);
+            float volume = 0.1 * (a->ch4.env.volume / 15.0f);
             if (!get_sample(&a->ch4, m, CYCLES_PER_SAMPLE)) volume = -volume;
-            sample += volume;
+            if (nr51 & 0x80) sample_l += volume;
+            if (nr51 & 0x08) sample_r += volume;
         }
         
-        sample *= 0.1f; // scale sample
+        // scale samples
+        sample_l *= 0.1f; 
+        sample_r *= 0.1f;
 
         if (a->buffer_index > AUDIO_BUFFER_SIZE) {
             a->buffer_index = 0; // reset if buffer overflowed
         }
 
-        // add sample twice since sdl expects dual channel audio
-        a->buffer[a->buffer_index++] = sample;
-        a->buffer[a->buffer_index++] = sample;
+        a->buffer[a->buffer_index++] = sample_l;
+        a->buffer[a->buffer_index++] = sample_r;
 
         // add samples to sdl audio queue
         if (a->buffer_index >= AUDIO_BUFFER_SIZE) {

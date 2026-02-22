@@ -13,7 +13,7 @@ main.exe PATH_TO_GAME
 
 ### BIOS
 
-Emulator requires Nintendo Game Boy boot ROM in the executable directory, named: 
+Emulator supports using a Nintendo Game Boy boot ROM in the executable directory, named: 
 ```
 dmg_boot.bin
 ```
@@ -66,15 +66,27 @@ dmg_boot.bin
 ## Features
 
 - Emulates Nintendo Game Boy games
-- Output debug information per-frame or per-cycle
+- Output debug information per-frame or per-instruction
 - VRAM viewer window
 - Pause
 - Frame Stepping
+- Instruction Stepping
 - Fast-Forward
 - Game saves
 - Game Boy Color palette colorisation
 
-## Building
+## Supported Cartridge Types
+
+- No MBC (MBC0)
+- MBC1
+- MBC3 (No RTC support)
+- MBC5
+
+<br>
+
+# Building
+
+## Windows
 
 ### Set up MSYS2
 
@@ -103,9 +115,37 @@ cd gb
 make
 ```
 
-## Supported Cartridge Types
+## Linux
+*Building steps for Ubuntu Linux*
 
-- No MBC (MBC0)
-- MBC1
-- MBC3 (No RTC support)
-- MBC5
+### Setup
+
+1. Update system package repositories
+```
+sudo apt update
+```
+
+### Install Pre-Requisites
+
+1. Install GCC compiler and make:
+```
+sudo apt install build-essential
+```
+
+2. Install SDL2:
+```
+sudo apt-get install libsdl2-dev
+```
+
+### Download & Compile
+
+1. Clone repository
+
+```
+git clone https://github.com/currall/gb.git
+cd gb
+```
+2. Compile
+```
+make
+```

@@ -19,16 +19,21 @@
 #define CPU_HZ 	4194304
 #define FPS		60
 
+void simulate_boot_rom(Registers* reg, Memory* m) {
+	cpu_init(reg);
+	mem_boot(m);
+}
+
 char* gb_init(char* file, Registers* reg, Memory* m, Status* s, Audio* audio) {
 	
-	read_boot_ROM("dmg_boot.bin",&m->boot_rom); // read boot rom into boot rom memory
+	uint32_t boot_rom_enabled = read_boot_ROM("dmg_boot.bin",&m->boot_rom); // read boot rom into boot rom memory
 	file = read_rom(file,m,s); // read into memory
 	
-	cpu_init(reg);
 	mem_init(m);
 	status_init(s);
 	audio_init(audio, m);
-
+	
+	if (!boot_rom_enabled) simulate_boot_rom(reg,m); // simulate boot rom if not found
 	if (m->ram_size > 0) load_game(file,m->eram,m->ram_size); // attempt to load save file
 
 	return file;
@@ -37,11 +42,11 @@ char* gb_init(char* file, Registers* reg, Memory* m, Status* s, Audio* audio) {
 int main(int argc, char *argv[]) {
 	
 	// create memory structures
-	Registers reg; // cpu registers
-	PPU ppu; // pixel processing unit (gpu)
-	Memory m = {0}; // memory
-	Status s = {0}; // debug emualtor status
-	Audio audio = {0}; // audio
+	Registers reg 	= {0}; // cpu registers
+	PPU ppu 		= {0}; // pixel processing unit (gpu)
+	Memory m 		= {0}; // memory
+	Status s 		= {0}; // debug emualtor status
+	Audio audio 	= {0}; // audio
 
 	char* file = 0;
 	if (argc>1) // read rom from arg if possible

@@ -6,35 +6,38 @@
 
 typedef enum {
     // channel 1 (square) registers
-    NR10 = 0x10, 
-    NR11 = 0x11,
-    NR12 = 0x12,
-    NR13 = 0x13,
-    NR14 = 0x14,
+    NR10 = 0xFF10, 
+    NR11 = 0xFF11,
+    NR12 = 0xFF12,
+    NR13 = 0xFF13,
+    NR14 = 0xFF14,
     
     // channel 2 (square) registers
-    NR21 = 0x16,
-    NR22 = 0x17,
-    NR23 = 0x18,
-    NR24 = 0x19,
+    NR21 = 0xFF16,
+    NR22 = 0xFF17,
+    NR23 = 0xFF18,
+    NR24 = 0xFF19,
 
     // channel 3 (wave) registers
-    NR30 = 0x1A,
-    NR31 = 0x1B,
-    NR32 = 0x1C,
-    NR33 = 0x1D,
-    NR34 = 0x1E,
+    NR30 = 0xFF1A,
+    NR31 = 0xFF1B,
+    NR32 = 0xFF1C,
+    NR33 = 0xFF1D,
+    NR34 = 0xFF1E,
 
     // channel 4 (noise) registers
-    NR41 = 0x20,
-    NR42 = 0x21,
-    NR43 = 0x22,
-    NR44 = 0x23,
+    NR41 = 0xFF20,
+    NR42 = 0xFF21,
+    NR43 = 0xFF22,
+    NR44 = 0xFF23,
 
     // global control registers
-    NR50 = 0x24,
-    NR51 = 0x25,
-    NR52 = 0x26,
+    NR50 = 0xFF24,
+    NR51 = 0xFF25,
+    NR52 = 0xFF26,
+
+    // wave data start
+    WAVE_DATA_START = 0xFF30
 
 } AudioRegisters;
 
@@ -59,12 +62,12 @@ typedef struct {
 
     int sweep_timer; // channel 1 sweep
 
-    // pointers to channel registers
-    uint8_t* nrx0;
-    uint8_t* nrx1;
-    uint8_t* nrx2;
-    uint8_t* nrx3;
-    uint8_t* nrx4;
+    // addresses of channel registers
+    uint16_t nrx0;
+    uint16_t nrx1;
+    uint16_t nrx2;
+    uint16_t nrx3;
+    uint16_t nrx4;
 
     int var;
     // ch1,2:   duty step -chooses sound profile for pulse channels 1,2

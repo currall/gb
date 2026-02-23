@@ -1088,8 +1088,8 @@ void service_interrupt(Registers* reg, Memory* m) {
         if (interrupt_pending(m) & (1 << i)) {
 			//printf("%d",i); // print interrupt type
 			reg->IME = 0;
-			m->io[0x0F] &= ~(1 << i);
-            //write8(m, 0xFF0F, iflag & ~(1 << i));
+			//m->io[0x0F] &= ~(1 << i);
+            write8(m, 0xFF0F, iflag & ~(1 << i));
             push(reg, m, reg->PC); 
             reg->PC = 0x40 + i * 8; // jump to interrupt
             return;

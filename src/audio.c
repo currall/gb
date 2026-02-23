@@ -25,29 +25,29 @@ void channels_init(Audio* a, Memory* m) {
     a->ch4.ch_number = 4;
 
     // set channel register pointers
-    a->ch1.nrx0 = & m->io[NR10];
-    a->ch1.nrx1 = & m->io[NR11];
-    a->ch1.nrx2 = & m->io[NR12];
-    a->ch1.nrx3 = & m->io[NR13];
-    a->ch1.nrx4 = & m->io[NR14];
+    a->ch1.nrx0 = NR10;
+    a->ch1.nrx1 = NR11;
+    a->ch1.nrx2 = NR12;
+    a->ch1.nrx3 = NR13;
+    a->ch1.nrx4 = NR14;
 
-    a->ch2.nrx0 = & m->io[NR21 - 1]; // no nr20 reg
-    a->ch2.nrx1 = & m->io[NR21];
-    a->ch2.nrx2 = & m->io[NR22];
-    a->ch2.nrx3 = & m->io[NR23];
-    a->ch2.nrx4 = & m->io[NR24];
+    a->ch2.nrx0 = NR21 - 1; // no nr20 reg
+    a->ch2.nrx1 = NR21;
+    a->ch2.nrx2 = NR22;
+    a->ch2.nrx3 = NR23;
+    a->ch2.nrx4 = NR24;
 
-    a->ch3.nrx0 = & m->io[NR30];
-    a->ch3.nrx1 = & m->io[NR31];
-    a->ch3.nrx2 = & m->io[NR32];
-    a->ch3.nrx3 = & m->io[NR33];
-    a->ch3.nrx4 = & m->io[NR34];
+    a->ch3.nrx0 = NR30;
+    a->ch3.nrx1 = NR31;
+    a->ch3.nrx2 = NR32;
+    a->ch3.nrx3 = NR33;
+    a->ch3.nrx4 = NR34;
 
-    a->ch4.nrx0 = & m->io[NR41 - 1]; // no nr40 reg
-    a->ch4.nrx1 = & m->io[NR41];
-    a->ch4.nrx2 = & m->io[NR42];
-    a->ch4.nrx3 = & m->io[NR43];
-    a->ch4.nrx4 = & m->io[NR44];
+    a->ch4.nrx0 = NR41 - 1; // no nr40 reg
+    a->ch4.nrx1 = NR41;
+    a->ch4.nrx2 = NR42;
+    a->ch4.nrx3 = NR43;
+    a->ch4.nrx4 = NR44;
 }
 
 void sdl_audio_init(Audio* a) {
@@ -71,6 +71,11 @@ void audio_init(Audio* a, Memory* m) {
     a->frame_seq_timer = 8192; // 4194304 / 512Hz
     a->frame_seq_step = 0;
     a->buffer_index = 0;
+    
+    write8(m, NR14, read8(m, NR14) & 0x7F);
+    write8(m, NR24, read8(m, NR24) & 0x7F);
+    write8(m, NR34, read8(m, NR34) & 0x7F);
+    write8(m, NR44, read8(m, NR44) & 0x7F);
 
     channels_init(a, m); // init 4 channels
     sdl_audio_init(a);   // start sdl audio
@@ -80,21 +85,24 @@ void audio_init(Audio* a, Memory* m) {
 // handles trigger event (nrx4 bit 7)
 // nrx2 controls volume and envelope
 
-void trigger_envelope(Envelope* env, uint8_t* nrx2){
-    env->volume = (*nrx2 >> 4) & 0x0F; // volume is set to nrx2 initial volume
-    env->env_dir = (*nrx2 >> 3) & 0x01; // 1 = fade in, 0 = fade out
-    env->env_pace = *nrx2 & 0x07;
+void trigger_envelope(Envelope* env, Memory* m, uint16_t nrx2){
+    env->volume = (read8(m, nrx2) >> 4) & 0x0F; // volume is set to nrx2 initial volume
+    env->env_dir = (read8(m, nrx2) >> 3) & 0x01; // 1 = fade in, 0 = fade out
+    env->env_pace = read8(m, nrx2) & 0x07;
     env->env_timer = env->env_pace;
 }
 
-void trigger(Channel* ch) {
+void trigger(Channel* ch, Memory* m) {
     ch->enabled = 1;
     // channel 3
     if (ch->ch_number == 3) {ch->var = 0; return;} // restart wave playback. returns since ch3 has no envelope
     // all other channels
-    if (ch->ch_number == 1) {ch->sweep_timer = *ch->nrx0;}
+    if (ch->ch_number == 1) {
+        int sweep_period = (read8(m, ch->nrx0) >> 4) & 0x07;
+        ch->sweep_timer = (sweep_period > 0) ? sweep_period : 8;
+    }
     if (ch->ch_number == 4) {ch->var = 0x7FFF;} // 15-bits of 1s, otherwise silence
-    trigger_envelope(&ch->env, ch->nrx2);
+    trigger_envelope(&ch->env, m, ch->nrx2);
 }
 
 // 64hz volume envelope
@@ -116,7 +124,7 @@ void clock_envelope(Envelope* env) {
 }
 
 // mutes audio if it exceeds its length
-void clock_length(Channel* ch, uint8_t* nr52) {
+void clock_length(Channel* ch, Memory* m) {
     if (ch->length_enabled && ch->length_timer > 0) {
         (ch->length_timer)--;
         if (ch->length_timer == 0) {
@@ -124,7 +132,34 @@ void clock_length(Channel* ch, uint8_t* nr52) {
 
             // clear the channel bit in nr52
             uint8_t mask = ~(1 << (ch->ch_number - 1));
-            *nr52 &= mask;
+            write8(m, NR52, ( read8(m, NR52) & mask ));
+        }
+    }
+}
+
+void clock_sweep(Channel* ch, Memory* m) {
+    if (ch->ch_number != 1) return;
+
+    uint8_t nr10 = read8(m, ch->nrx0);
+    int sweep_period = (nr10 >> 4) & 0x07;
+    int sweep_shift = nr10 & 0x07;
+    int sweep_dir = (nr10 >> 3) & 0x01;
+
+    if (sweep_period == 0) return;
+
+    ch->sweep_timer--;
+    if (ch->sweep_timer <= 0) {
+        ch->sweep_timer = sweep_period == 0 ? 8 : sweep_period;
+        
+        int freq = read8(m, ch->nrx3) | ((read8(m, ch->nrx4) & 0x07) << 8);
+        int offset = freq >> sweep_shift;
+        int new_freq = sweep_dir ? (freq - offset) : (freq + offset);
+        
+        if (new_freq > 2047) {
+            ch->enabled = 0; 
+        } else if (sweep_shift != 0) {
+            write8(m, ch->nrx3, new_freq & 0xFF);
+            write8(m, ch->nrx4, (read8(m, ch->nrx4) & 0xF8) | ((new_freq >> 8) & 0x07));
         }
     }
 }
@@ -136,7 +171,7 @@ int get_sample(Channel* ch, Memory* m, int cycles) {
     if (ch->ch_number < 3) {
         if (ch->env.volume == 0) return 0;
 
-        int freq = *ch->nrx3 | ((*ch->nrx4 & 0x07) << 8);
+        int freq = read8(m, ch->nrx3) | ((read8(m, ch->nrx4) & 0x07) << 8);
         int period = (2048 - freq) * 4;
         
         ch->timer -= cycles;
@@ -146,14 +181,14 @@ int get_sample(Channel* ch, Memory* m, int cycles) {
             ch->var = (ch->var + 1) % 8;
         }
 
-        int duty = (*ch->nrx1 >> 6) & 0x03;
+        int duty = (read8(m, ch->nrx1) >> 6) & 0x03;
         return duty_table[duty][ch->var];
     }
     // channel 3 (wave channel)
     else if (ch->ch_number == 3) {
-        if (!(*ch->nrx0 & 0x80)) return 0; // silence if channel disabled
+        if (!(read8(m, ch->nrx0) & 0x80)) return 0; // silence if channel disabled
 
-        int freq = *ch->nrx3 | ((*ch->nrx4 & 0x07) << 8);
+        int freq = read8(m, ch->nrx3) | ((read8(m, ch->nrx4) & 0x07) << 8);
         int period = (2048 - freq) * 2; 
         
         ch->timer -= cycles;
@@ -163,13 +198,13 @@ int get_sample(Channel* ch, Memory* m, int cycles) {
         }
 
         // 16bytes at 0xff30. 2 samples per byte
-        uint8_t byte = m->io[0x30 + (ch->var / 2)];
+        uint8_t byte = read8(m, WAVE_DATA_START + (ch->var / 2) );
         
         // top 4 bits for even pos, bottom 4 bits for odd pos
         uint8_t sample = (ch->var % 2 == 0) ? (byte >> 4) : (byte & 0x0F);
 
         // volume shifting
-        int vol_code = (*ch->nrx2 >> 5) & 0x03;
+        int vol_code = (read8(m, ch->nrx2) >> 5) & 0x03;
 
         switch(vol_code) {
             case 0: return 0; // volume 0%
@@ -184,8 +219,8 @@ int get_sample(Channel* ch, Memory* m, int cycles) {
         if (ch->env.volume == 0) return 0;
 
         // decode nr43
-        int shift = *ch->nrx3 >> 4;
-        int divisor_code = *ch->nrx3 & 0x07;
+        int shift = read8(m, ch->nrx3) >> 4;
+        int divisor_code = read8(m, ch->nrx3) & 0x07;
         int divisor = (divisor_code == 0) ? 8 : (divisor_code * 16);
         int period = (divisor << shift); 
 
@@ -195,13 +230,13 @@ int get_sample(Channel* ch, Memory* m, int cycles) {
 
             // xor bottom 2 bits
             // shift entire register right
-            //put reuslt in top bit
+            // put reuslt in top bit
             int xor_bit = (ch->var & 0x01) ^ ((ch->var & 0x02) >> 1);
             ch->var >>= 1; 
             ch->var |= (xor_bit << 14); 
 
             // short mode enabled by nr43
-            if (*ch->nrx3 & 0x08) {
+            if (read8(m, ch->nrx3) & 0x08) {
                 ch->var &= ~(1 << 6); 
                 ch->var |= (xor_bit << 6); // put result in bit 7 also
                 // makes sound more robotic
@@ -213,33 +248,33 @@ int get_sample(Channel* ch, Memory* m, int cycles) {
     }
 }
 
-void detect_trigger(Channel* ch, uint8_t* nr52) {
+void detect_trigger(Channel* ch, Memory* m) {
 
-    if (*ch->nrx4 & 0x80) { // bit 7 of NRx4 triggers the channel
+    if (read8(m, ch->nrx4) & 0x80) { // bit 7 of NRx4 triggers the channel
         
-        if (ch->ch_number == 1) *nr52 |= 0x01;
-        if (ch->ch_number == 2) *nr52 |= 0x02;
-        if (ch->ch_number == 3) *nr52 |= 0x04;
-        if (ch->ch_number == 4) *nr52 |= 0x08;
+        if (ch->ch_number == 1) write8(m, NR52, ( read8(m, NR52) & 0x01 ));
+        if (ch->ch_number == 2) write8(m, NR52, ( read8(m, NR52) & 0x02 ));
+        if (ch->ch_number == 3) write8(m, NR52, ( read8(m, NR52) & 0x04 ));
+        if (ch->ch_number == 4) write8(m, NR52, ( read8(m, NR52) & 0x08 ));
 
-        trigger(ch); 
+        trigger(ch, m); 
 
         // enable length
-        if (*ch->nrx4 & 0x40) ch->length_enabled = 1;
+        if (read8(m,ch->nrx4) & 0x40) ch->length_enabled = 1;
         else ch->length_enabled = 0;
 
         int max_length = 64;
-        int length_data = *ch->nrx1 & 0x3F;
+        int length_data = read8(m, ch->nrx1) & 0x3F;
 
         if (ch->ch_number == 3) {
             max_length = 256;
-            length_data = *ch->nrx1; 
+            length_data = read8(m, ch->nrx1); 
         }
 
         if (ch->length_timer == 0) ch->length_timer = max_length - length_data;
 
         // set reg to 1s
-        *ch->nrx4 &= 0x7F;
+        write8(m, ch->nrx4, ( read8(m, ch->nrx4) & 0x7F ));
 
     }
 
@@ -247,12 +282,19 @@ void detect_trigger(Channel* ch, uint8_t* nr52) {
 
 void audio_step(Audio* a, Memory* m, int cycles) {
     if (!a->device) return; // skip if no audio device
+    if (!(read8(m, NR52) & 0x80)) { // apu is off
+        a->ch1.enabled = 0;
+        a->ch2.enabled = 0;
+        a->ch3.enabled = 0;
+        a->ch4.enabled = 0;
+        return;
+    }
 
     // detect triggers
-    detect_trigger(&a->ch1, &m->io[NR52]);
-    detect_trigger(&a->ch2, &m->io[NR52]);
-    detect_trigger(&a->ch3, &m->io[NR52]);
-    detect_trigger(&a->ch4, &m->io[NR52]);
+    detect_trigger(&a->ch1, m);
+    detect_trigger(&a->ch2, m);
+    detect_trigger(&a->ch3, m);
+    detect_trigger(&a->ch4, m);
 
     // step the frame sequencer
     a->frame_seq_timer -= cycles;
@@ -261,10 +303,14 @@ void audio_step(Audio* a, Memory* m, int cycles) {
 
         // tick length counters on even steps
         if (a->frame_seq_step % 2 == 0) {
-            clock_length(&a->ch1, &m->io[NR52]);
-            clock_length(&a->ch2, &m->io[NR52]);
-            clock_length(&a->ch3, &m->io[NR52]);
-            clock_length(&a->ch4, &m->io[NR52]);
+            clock_length(&a->ch1, m);
+            clock_length(&a->ch2, m);
+            clock_length(&a->ch3, m);
+            clock_length(&a->ch4, m);
+        }
+        // tick frequency sweep on steps 2 and 6
+        if (a->frame_seq_step == 2 || a->frame_seq_step == 6) {
+            clock_sweep(&a->ch1, m);
         }
 
         // volume envelopes on step 7
@@ -285,27 +331,27 @@ void audio_step(Audio* a, Memory* m, int cycles) {
         // separate left and right samples
         float sample_l = 0.0f;
         float sample_r = 0.0f;
-        uint8_t nr51 = m->io[NR51];
+        uint8_t nr51 = read8(m, NR51);
 
-        if (a->ch1.enabled) {
+        if (a->ch1.enabled && (read8(m, a->ch1.nrx2) & 0xF8) != 0) {
             float volume = (a->ch1.env.volume / 15.0f);
             if (!get_sample(&a->ch1, m, CYCLES_PER_SAMPLE)) volume = -volume;
             if (nr51 & 0x10) sample_l += volume; // Mix to Left
             if (nr51 & 0x01) sample_r += volume; // Mix to Right
         }
-        if (a->ch2.enabled) {
+        if (a->ch2.enabled && (read8(m, a->ch2.nrx2) & 0xF8) != 0) {
             float volume = (a->ch2.env.volume / 15.0f);
             if (!get_sample(&a->ch2, m, CYCLES_PER_SAMPLE)) volume = -volume;
             if (nr51 & 0x20) sample_l += volume;
             if (nr51 & 0x02) sample_r += volume;
         }
-        if (a->ch3.enabled) {
+        if (a->ch3.enabled && (read8(m, a->ch3.nrx0) & 0x80) != 0) {
             float wave = get_sample(&a->ch3, m, CYCLES_PER_SAMPLE);
             float ch3_out = (wave / 7.5f) - 1.0f;
             if (nr51 & 0x40) sample_l += ch3_out;
             if (nr51 & 0x04) sample_r += ch3_out;
         }
-        if (a->ch4.enabled) {
+        if (a->ch4.enabled && (read8(m, a->ch4.nrx2) & 0xF8) != 0) {
             float volume = 0.1 * (a->ch4.env.volume / 15.0f);
             if (!get_sample(&a->ch4, m, CYCLES_PER_SAMPLE)) volume = -volume;
             if (nr51 & 0x80) sample_l += volume;

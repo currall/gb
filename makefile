@@ -1,6 +1,7 @@
 CC = gcc
 
 PLATFORM ?= auto
+VERSION ?= debug
 
 ifeq ($(PLATFORM),auto) # detect platform
     ifeq ($(OS),Windows_NT)
@@ -15,7 +16,13 @@ ifeq ($(PLATFORM),windows)
     CFLAGS := -Iinclude -I/mingw64/include/SDL2 -Iexternal/tinyfiledialogs
     CFLAGS_DEBUG := -Wall -Wextra $(CFLAGS)
 
-    LDLIBS := -lSDL2main -lSDL2 -lole32 -lcomdlg32
+    LDLIBS_BASE := -lSDL2main -lSDL2 -lole32 -lcomdlg32
+
+    LDLIBS_release := -mwindows $(LDLIBS_BASE)
+    LDLIBS_debug   := $(LDLIBS_BASE)
+
+    LDLIBS := $(LDLIBS_$(VERSION))
+
 
 else ifeq ($(PLATFORM),linux)
 

@@ -2,6 +2,11 @@
 #include <stdlib.h>
 #include <time.h>
 
+#ifdef _WIN32
+#include <windows.h>
+#include <stdio.h>
+#endif
+
 #include "audio.h"
 #include "cpu.h"
 #include "debug.h"
@@ -40,6 +45,15 @@ char* gb_init(char* file, Registers* reg, Memory* m, Status* s, Audio* audio) {
 }
 
 int main(int argc, char *argv[]) {
+
+	#ifdef _WIN32
+    // on windows, attach to cmd window that launched program
+    if (AttachConsole(ATTACH_PARENT_PROCESS)) {
+        freopen("CONOUT$", "w", stdout);
+        freopen("CONOUT$", "w", stderr);
+        freopen("CONIN$", "r", stdin);
+    }
+	#endif
 	
 	// create memory structures
 	Registers reg 	= {0}; // cpu registers

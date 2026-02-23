@@ -16,7 +16,7 @@ uint8_t get_mbc_type(uint8_t cartridge_type) {
     if (cartridge_type >= 0x0F && cartridge_type <= 0x13) mbc = 3; // MBC3
     if (cartridge_type >= 0x19 && cartridge_type <= 0x1E) mbc = 5; // MBC5
 
-    printf("cart type: 0x%x, mbc%d\n",cartridge_type,mbc);
+    printf("Cartridge Type: 0x%x, MBC%d\n",cartridge_type,mbc);
     return mbc;
 }
 
@@ -56,9 +56,9 @@ void mem_boot(Memory* m) {
     m->io[0x22] = 0x00;
     m->io[0x23] = 0xBF;
 
-    m->io[0x24] = 0x77;
-    m->io[0x25] = 0xF3;
-    m->io[0x26] = 0xF1;
+    m->io[0x24] = 0x77; // nr50
+    m->io[0x25] = 0xF3; // nr51
+    m->io[0x26] = 0xF1; // nr52
 
     // --- PPU ---
     m->io[0x40] = 0x91; // LCDC
@@ -79,24 +79,10 @@ void mem_boot(Memory* m) {
 
 void mem_init(Memory* m) {
 
-    // default memory to high
-    for (int i = 0; i < 0x2000; i++) {
-        m->vram[i] = 0x00; // vram defaults to 0
-        m->wram[i] = 0xFF;
-    }
-    for (int i = 0; i < 0xA0; i++) m->oam[i] = 0x00;
-    for (int i = 0; i < 0x80; i++) m->io[i] = 0xFF;
-    for (int i = 0; i < 0x7F; i++) m->hram[i] = 0xFF;
-    m->ie = 0xFF;
-
-    // --- Joypad ---
+    // --- Joypad --- (needs initialising even if boot rom is present)
     m->io[0x00] = 0xCF;
     m->j.dpad = 0x0F;
     m->j.buttons = 0x0F;
-
-    // --- Interrupts ---
-    m->io[0x0F] = 0x00; // IF
-    m->ie = 0x00; // IE
     
     // -- MBC ---
     m->mbc_type = get_mbc_type(m->cartridge_type);

@@ -165,10 +165,12 @@ void print_memory(Memory* m) {
 	printf("DMA index: 0x%x\n",m->dma_index);
 	printf("Cycles Remaining: %d\n",m->dma_cycles_left);
 	
-	printf("\n=== BOOT ROM ===\n");
-	
-	for (int i=0; i< 0x100; i++){
-		printf("%02x ",m->boot_rom[i]);
+	if (m->boot_rom_enabled){ 
+		printf("\n=== BOOT ROM ===\n");
+		
+		for (int i=0; i< 0x100; i++){
+			printf("%02x ",m->boot_rom[i]);
+		}
 	}
 	
 	printf("\n=== MEMORY ADDRESS SPACE ===\n");

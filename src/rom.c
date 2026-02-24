@@ -76,6 +76,9 @@ char* read_rom(char* file, Memory* m, Status* s){
     m->eram = (uint8_t*)malloc(m->ram_size);
     for (size_t i = 0; i < m->ram_size; i++) m->eram[i] = 0xFF;
 
+    // --- GBC ---
+    if (h.CGBMode == 0x80 || h.CGBMode == 0xC0) m->cgb_mode = 1;
+
     // gbc palette selection
     uint8_t game_id = encode_title(h.ROMName);
     printf("Game ID: %x\n",game_id);

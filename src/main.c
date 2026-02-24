@@ -57,10 +57,12 @@ int main(int argc, char *argv[]) {
 	
 	// create memory structures
 	Registers reg 	= {0}; // cpu registers
-	PPU ppu 		= {0}; // pixel processing unit (gpu)
 	Memory m 		= {0}; // memory
+	PPU ppu 		= {0}; // pixel processing unit (gpu)
 	Status s 		= {0}; // debug emualtor status
 	Audio audio 	= {0}; // audio
+
+	m.ppu = &ppu;
 
 	char* file = 0;
 	if (argc>1) // read rom from arg if possible

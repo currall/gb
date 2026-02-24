@@ -4,6 +4,8 @@
 
 #include <stdint.h>
 
+typedef struct PPU PPU;   // ADD THIS LINE
+
 typedef struct {
 
 	uint8_t dpad; 	 // right left up down
@@ -13,15 +15,23 @@ typedef struct {
 
 typedef struct Memory {
 
+	PPU* ppu;
+
+	// === CGB MODE ===
+
+	int cgb_mode;
+	uint8_t vram_bank;
+	uint8_t wram_bank;
+
 	// === MEMORY ===
 
-	uint8_t vram[0x2000];   // 8000-9FFF
-	uint8_t* eram;   		// A000-BFFF - extensible using MBC cartridges
-	uint8_t wram[0x2000];   // C000-DFFF
-	uint8_t oam[0xA0];      // FE00-FE9F
-	uint8_t io[0x80];       // FF00-FF7F
-	uint8_t hram[0x7F];     // FF80-FFFE
-	uint8_t ie;             // FFFF
+	uint8_t vram[2][0x2000];   	// 8000-9FFF (2 vram banks under cgb)
+	uint8_t* eram;   			// A000-BFFF (extensible using MBC cartridges)
+	uint8_t wram[8][0x1000];   	// C000-DFFF (8 banks under cgb)
+	uint8_t oam[0xA0];      	// FE00-FE9F
+	uint8_t io[0x80];       	// FF00-FF7F
+	uint8_t hram[0x7F];     	// FF80-FFFE
+	uint8_t ie;             	// FFFF
 
 	// === ROM ===
 
@@ -61,10 +71,12 @@ typedef struct Memory {
 void mem_boot(Memory* m);
 void mem_init(Memory* m);
 
+void write_vram(Memory* m, uint16_t addr, uint8_t value, int bank);
 void raw_write(Memory* m, uint16_t addr, uint8_t value);
 void write8(Memory* m, uint16_t addr, uint8_t value);
 void write16(Memory* m, uint16_t addr, uint16_t value);
 
+uint8_t read_vram(Memory* m, uint16_t addr, int bank);
 uint8_t raw_read(Memory *m, uint16_t addr);
 uint8_t read8(Memory* m, uint16_t addr);
 uint16_t read16(Memory* m, uint16_t addr);

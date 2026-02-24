@@ -10,6 +10,7 @@ typedef struct {
 
     uint8_t     ROMName[16];
     uint16_t    NewLicensee;
+    uint8_t     CGBMode;
     uint8_t     SGBFeatures;
     uint8_t     CartridgeType;
     uint8_t     ROMSize;

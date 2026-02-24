@@ -18,6 +18,7 @@ Header read_header(Memory* m){
                       (uint16_t)m->rom[0x0145];
 
     // Single-byte fields
+    h.CGBMode       = m->rom[0x0143];
     h.SGBFeatures   = m->rom[0x0146];
     h.CartridgeType = m->rom[0x0147];
     h.ROMSize       = m->rom[0x0148];
@@ -31,6 +32,7 @@ Header read_header(Memory* m){
 void print_header(Header h){
     printf("ROM Name:               %s\n",h.ROMName);
     printf("New Licensee:           %d\n",h.NewLicensee);
+    printf("GameBoy Color Support:  %x\n",h.CGBMode);
     printf("SuperGameBoy Features:  %d\n",h.SGBFeatures);
     printf("Cartridge Type:         %d\n",h.CartridgeType);
     printf("ROM Size:               %d\n",h.ROMSize);

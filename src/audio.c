@@ -250,14 +250,16 @@ int get_sample(Channel* ch, Memory* m, int cycles) {
 
 void detect_trigger(Channel* ch, Memory* m) {
 
+    uint8_t nrx4 = read8(m, ch->nrx4);
     if (read8(m, ch->nrx4) & 0x80) { // bit 7 of NRx4 triggers the channel
         
-        if (ch->ch_number == 1) write8(m, NR52, ( read8(m, NR52) & 0x01 ));
-        if (ch->ch_number == 2) write8(m, NR52, ( read8(m, NR52) & 0x02 ));
-        if (ch->ch_number == 3) write8(m, NR52, ( read8(m, NR52) & 0x04 ));
-        if (ch->ch_number == 4) write8(m, NR52, ( read8(m, NR52) & 0x08 ));
-
-        trigger(ch, m); 
+        uint8_t nr52 = read8(m, NR52);
+        nr52 |= (1 << (ch->ch_number - 1));
+        write8(m, NR52, nr52);
+        trigger(ch, m);
+        
+        // clears trigger bit after process
+        write8(m, ch->nrx4, nrx4 & ~0x80);
 
         // enable length
         if (read8(m,ch->nrx4) & 0x40) ch->length_enabled = 1;

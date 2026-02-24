@@ -332,14 +332,18 @@ void rrca(Registers* reg) {
 // 0x10
 void stop(Registers* reg, Memory* m) {
 	if (m->cgb_mode) {
-		uint8_t speed_byte = read8(m, 0xFF4D);
-		if ((speed_byte & 0x01) && m->cgb_speed == 1) m->cgb_speed = 2;
-		if ((speed_byte & 0x01) && m->cgb_speed == 2) m->cgb_speed = 1;
-
-		speed_byte = (m->cgb_speed == 2) ? 0x80 : 0x00;
-    	write8(m, 0xFF4D, speed_byte);
-		printf("[CGB] cgb speed mode changed = %d\n",m->cgb_speed);
-	}
+        uint8_t speed_reg = read8(m, 0xFF4D);
+        if (speed_reg & 0x01) {
+            if (m->cgb_speed == 1) {
+                m->cgb_speed = 2;
+                write8(m, 0xFF4D, 0x80); 
+            } else {
+                m->cgb_speed = 1;
+                write8(m, 0xFF4D, 0x00);
+            }
+			printf("[CGB] cgb speed mode changed = %d\n",m->cgb_speed);
+        }
+    }
 }
 // 0x11
 void ld_de_xx(Registers* reg, uint16_t operand) {reg->DE = operand;}

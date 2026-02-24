@@ -129,6 +129,13 @@ void check_events(Status* s, Memory* m){
 			if (key == SDLK_BACKSPACE) joypad_set_button(m, JP_SELECT, 1, 1);
 			if (key == SDLK_RETURN) joypad_set_button(m, JP_START, 1, 1);
 
+			if (key == SDLK_F1) {
+				joypad_set_button(m, JP_A, 1, 1);
+				joypad_set_button(m, JP_B, 1, 1);
+				joypad_set_button(m, JP_SELECT, 1, 1);
+				joypad_set_button(m, JP_START, 1, 1);
+			}
+
 			// emulation
 			if (key == SDLK_o) 
 				s->new_game = 1;
@@ -189,6 +196,13 @@ void check_events(Status* s, Memory* m){
 			if (key == SDLK_COMMA  || key == SDLK_x) joypad_set_button(m, JP_B, 0, 1);
 			if (key == SDLK_BACKSPACE) joypad_set_button(m, JP_SELECT, 0, 1);
 			if (key == SDLK_RETURN) joypad_set_button(m, JP_START, 0, 1);
+
+			if (key == SDLK_F1) {
+				joypad_set_button(m, JP_A, 0, 1);
+				joypad_set_button(m, JP_B, 0, 1);
+				joypad_set_button(m, JP_SELECT, 0, 1);
+				joypad_set_button(m, JP_START, 0, 1);
+			}
 
 			//logging
 			if (key == SDLK_RSHIFT) 

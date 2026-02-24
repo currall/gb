@@ -137,12 +137,12 @@ int main(int argc, char *argv[]) {
 			if (s.restart_triggered) {
 				s.restart_triggered = 0;
 				if (m.ram_size > 0) save_game(file, m.eram, m.ram_size); // save before resetting	
-				gb_init(file, &reg, &m, &s, &audio);
+				file = gb_init(file, &reg, &m, &s, &audio);
 			}
 			if (s.new_game) {
 				s.new_game = 0;
 				if (m.ram_size > 0) save_game(file, m.eram, m.ram_size); // save before new game
-				gb_init(0, &reg, &m, &s, &audio);
+				file = gb_init(0, &reg, &m, &s, &audio);
 			}
 
 			// debug

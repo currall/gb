@@ -308,7 +308,7 @@ int dma_blocks(Memory* m, uint16_t addr) {
 
 void write_vram(Memory* m, uint16_t addr, uint8_t value, int bank){
     if (!(addr >= 0x8000 && addr <= 0x9FFF)) return;
-    if (!bank == 0 && !bank == 1) bank = m->vram_bank;
+    if (!(bank == 0 || !bank == 1)) bank = m->vram_bank;
     m->vram[bank][addr - 0x8000] = value;
 }
 
@@ -333,7 +333,7 @@ void raw_write(Memory* m, uint16_t addr, uint8_t value) {
     } 
 
     // vram
-    if (addr >= 0x8000 && addr <= 0x9FFF) write_vram(m, addr, value, 0);
+    if (addr >= 0x8000 && addr <= 0x9FFF) write_vram(m, addr, value, -1);
 
     // wram
     if (addr >= 0xC000 && addr <= 0xCFFF) m->wram[0][addr - 0xC000] = value;

@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
 		
 		// end timer
 		
-		if (s.frame_tracker > (CPU_HZ / 60)) { // code to run per-frame
+		if (s.frame_tracker > ((CPU_HZ * m.cgb_speed) / 60)) { // code to run per-frame
 
 			// input
 			check_events(&s,&m);
@@ -166,13 +166,14 @@ int main(int argc, char *argv[]) {
 		}
 
 		// check if 1 second has passed
-		if (s.second_tracker > CPU_HZ){ // code to run per emulated second
+		if (s.second_tracker > (CPU_HZ * m.cgb_speed)){ // code to run per emulated second
 
-			uint64_t ticks = clock() - second_count;
+			uint64_t new_clock = clock();
+			uint64_t ticks = new_clock - second_count;
 			double ms = (double)ticks * 1000.0 / CLOCKS_PER_SEC;
 			double percentage = (1000.0 / ms) * 100.0;
 			double fps = 60 * (1000.0 / ms);
-			second_count = clock();
+			second_count = new_clock;
 			s.total_seconds++;
 
 			if (PRINT_DEBUG)

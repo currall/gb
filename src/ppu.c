@@ -192,9 +192,20 @@ void draw_fg(PPU* ppu, uint32_t* framebuffer, Memory* m) {
 
     int sprite_height = (lcdc & 0x04) ? 16 : 8;
     int sprites_drawn = 0; // gameboy has limit of 10 sprites per scanline
+
+    int visible_sprites[10];
+    int count = 0;
+
+    for (int i = 0; i < 40 && count < 10; i++) {
+        int y = read8(m, 0xFE00 + i * 4) - 16;
+        if (ppu->scanline >= y && ppu->scanline < y + sprite_height) {
+            visible_sprites[count++] = i;
+        }
+    }
 	
-	for (int i = 0; i < 40 && sprites_drawn < 10; i++) { // 40 sprites total, 10 per scanline
-		uint16_t oam_addr = 0xFE00 + i * 4;
+	for (int i = count - 1; i >= 0; i--) {
+        int sprite_idx = visible_sprites[i];
+        uint16_t oam_addr = 0xFE00 + sprite_idx * 4;
         
         int y = read8(m, oam_addr) - 16;
         int x = read8(m, oam_addr + 1) - 8;
@@ -248,6 +259,7 @@ void draw_fg(PPU* ppu, uint32_t* framebuffer, Memory* m) {
                 if (!(lcdc & 0x01)) can_draw = 1; // lcdc 0 - sprites over bg
                 else if (bg_color == 0) can_draw = 1; // bg transparent
                 else if (bg_priority == 0 && priority == 0) can_draw = 1;
+                else if (bg_priority == 0 && priority != 0) can_draw = 0;
             } else {
                 if (priority == 0 || bg_color == 0) can_draw = 1;
             }

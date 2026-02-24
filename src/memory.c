@@ -82,6 +82,7 @@ void mem_init(Memory* m) {
 
     // --- CGB ---
 
+    m->cgb_speed = 1;
     m->vram_bank = 0;
     m->wram_bank = 1;
     memset(m->ppu->bg_palette, 0x00, sizeof(m->ppu->bg_palette));
@@ -394,6 +395,23 @@ void write8(Memory* m, uint16_t addr, uint8_t value) {
     if (addr == 0xFF50 && value != 0 && m->boot_rom_enabled) {
         m->boot_rom_enabled = 0;
 		printf("[MEMORY] Boot ROM disabled!\n");
+    }
+
+    if (addr == 0xFF55) {
+        uint16_t src = (m->io[0x51] << 8) | (m->io[0x52] & 0xF0);
+        uint16_t dst = ((m->io[0x53] & 0x1F) << 8) | (m->io[0x54] & 0xF0);
+        dst |= 0x8000; // dst is in vram
+
+        uint16_t length = ((value & 0x7F) + 1) * 16;
+        int mode = value >> 7;
+
+        if (mode == 0) {
+            // dma
+            for (int i = 0; i < length; i++) {
+                m->vram[m->vram_bank][(dst + i) - 0x8000] = raw_read(m, src + i);
+            }
+            m->io[0x55] = 0xFF; // transfer complete
+        }
     }
 
     if (addr == 0xFF69) {

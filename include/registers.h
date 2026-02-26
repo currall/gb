@@ -2,7 +2,7 @@
 #ifndef REGISTERS_H
 #define REGISTERS_H
 
-typedef struct {
+typedef struct Registers {
 
     union { struct { uint8_t F, A; }; uint16_t AF; };
     union { struct { uint8_t C, B; }; uint16_t BC; };

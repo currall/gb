@@ -172,14 +172,9 @@ void draw_bg(PPU* ppu, uint32_t* framebuffer, Memory* m) {
         int color_idx = ((high >> bit) & 1) << 1 | ((low >> bit) & 1);
         priority_map[x] = ((attr >> 7) & 0x01) << 7 | (color_idx & 0x03);
         
-        if (m->cgb_mode) {
-            int palette_addr = (cgb_palette * 8) + (color_idx * 2);
-            uint16_t color16 = ppu->bg_palette[palette_addr] | (ppu->bg_palette[palette_addr + 1] << 8);
-            framebuffer[scanline * 160 + x] = gbc_to_rgb(color16);
-        } else {
-            int shade = (bgp >> (color_idx * 2)) & 0x03;
-            framebuffer[scanline * 160 + x] = palette[shade];
-        }
+        int palette_addr = (cgb_palette * 8) + (color_idx * 2);
+        uint16_t color16 = ppu->bg_palette[palette_addr] | (ppu->bg_palette[palette_addr + 1] << 8);
+        framebuffer[scanline * 160 + x] = gbc_to_rgb(color16);
 
     }
 	if (window_enable) ppu->window_line++;
@@ -216,9 +211,9 @@ void draw_fg(PPU* ppu, uint32_t* framebuffer, Memory* m) {
 		sprites_drawn++;
 
 		// if (sprite_height == 16) tile_id &= 0xFE; // lsb of index is ignored for 16px tile
-
-		int cgb_palette		= attr & 0x07;         // palette
-        int vram_bank       = (attr >> 3) & 1;  // vram bank of tile
+                   
+        int cgb_palette = attr & 0x07;
+        int vram_bank = (attr >> 3) & 1;  // vram bank of tile
 
         int line = ppu->scanline - y; // line inside tile
         if (attr & 0x40) line = sprite_height - 1 - line; // vertical flip attribute
@@ -265,15 +260,9 @@ void draw_fg(PPU* ppu, uint32_t* framebuffer, Memory* m) {
             }
 			
             if (can_draw) {
-                if (m->cgb_mode){
-                    int palette_addr = (cgb_palette * 8) + (color_idx * 2); 
-                    uint16_t color16 = ppu->obj_palette[palette_addr] | (ppu->obj_palette[palette_addr + 1] << 8);
-                    framebuffer[ppu->scanline * 160 + screen_x] = gbc_to_rgb(color16);
-                } else {
-                    int shade = (palette_reg >> (color_idx * 2)) & 0x03;
-                    if (palette_reg_addr == 0xFF48) framebuffer[ppu->scanline * 160 + screen_x] = palette[shade];
-                    if (palette_reg_addr == 0xFF49) framebuffer[ppu->scanline * 160 + screen_x] = palette[shade];
-                }
+                int palette_addr = (cgb_palette * 8) + (color_idx * 2); 
+                uint16_t color16 = ppu->obj_palette[palette_addr] | (ppu->obj_palette[palette_addr + 1] << 8);
+                framebuffer[ppu->scanline * 160 + screen_x] = gbc_to_rgb(color16);
             }
 		}
 	}

@@ -4,8 +4,8 @@
 
 #include <stdint.h>
 
-#include "memory.h"
-#include "registers.h"
+typedef struct Memory Memory;
+typedef struct Registers Registers;
 
 #define PRINT_DEBUG	1
 

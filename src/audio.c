@@ -1,6 +1,8 @@
-#include "audio.h"
 #include <SDL2/SDL.h>
 #include <stdio.h>
+
+#include "audio.h"
+#include "memory.h"
 
 // controls the waveform. per cycle - 1 is low 0 is high
 static const int duty_table[4][8] = { 

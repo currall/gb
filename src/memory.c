@@ -73,6 +73,24 @@ void mem_boot(Memory* m) {
     m->io[0x49] = 0xFF; // OBP1
     m->io[0x4A] = 0x00; // WY
     m->io[0x4B] = 0x00; // WX
+    
+    m->ppu->obj_palette[0] = 0xFF;
+    m->ppu->obj_palette[1] = 0x7F; 
+    m->ppu->obj_palette[2] = 0x94;
+    m->ppu->obj_palette[3] = 0x52; 
+    m->ppu->obj_palette[4] = 0x4A; 
+    m->ppu->obj_palette[5] = 0x29; 
+    m->ppu->obj_palette[6] = 0x00; 
+    m->ppu->obj_palette[7] = 0x00; 
+    
+    m->ppu->bg_palette[0] = 0xFF;
+    m->ppu->bg_palette[1] = 0x7F; 
+    m->ppu->bg_palette[2] = 0x94;
+    m->ppu->bg_palette[3] = 0x52; 
+    m->ppu->bg_palette[4] = 0x4A; 
+    m->ppu->bg_palette[5] = 0x29; 
+    m->ppu->bg_palette[6] = 0x00; 
+    m->ppu->bg_palette[7] = 0x00; 
 
     // --- CGB ---
     m->io[0x4D] = 0x7E;
@@ -395,15 +413,9 @@ void write8(Memory* m, uint16_t addr, uint8_t value) {
         m->vram_bank = value & 0x01; // CGB vram bank no
     }
 	
-    if (addr == 0xFF50 && m->boot_rom_enabled) {
-        if (m->cgb_mode && value == 1){
-            m->boot_rom_enabled = 0;
-            printf("[MEMORY] Boot ROM disabled!\n");
-        }
-        else if (!m->cgb_mode && value != 0){
-            m->boot_rom_enabled = 0;
-            printf("[MEMORY] Boot ROM disabled!\n");
-        }
+    if (addr == 0xFF50 && value != 0 && m->boot_rom_enabled) {
+        m->boot_rom_enabled = 0;
+        printf("[MEMORY] Boot ROM disabled!\n");
         return;
     }
 
@@ -482,13 +494,12 @@ uint8_t raw_read(Memory *m, uint16_t addr) {
         
     // boot rom
     if (m->boot_rom_enabled) {
-        if (addr < 0x0100) {
+        if (addr < 0x0100) { // dmg boot rom mode
             return m->boot_rom[addr];
         }
         
-        // extra space for cgb only boot rom
-        if (m->cgb_mode && addr >= 0x0200 && addr < 0x0900) {
-            return m->boot_rom[addr-0x100]; 
+        if (m->boot_rom_type == 1 && addr >= 0x0200 && addr < 0x0900) { // extra space for cgb boot roms
+            return m->boot_rom[addr]; 
         }
     }
 

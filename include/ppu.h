@@ -3,8 +3,9 @@
 #define PPU_H
 
 #include <stdint.h>
-#include "debug.h"
-#include "memory.h"
+
+typedef struct Memory Memory;
+typedef struct Status Status;
 
 #define MODE_HBLANK 0
 #define MODE_VBLANK 1

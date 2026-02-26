@@ -1,6 +1,6 @@
 # gb
 
-Nintendo Game Boy emulator written in C
+Nintendo Game Boy / Game Boy Color emulator written in C
 
 ## Usage
 
@@ -13,10 +13,11 @@ main.exe PATH_TO_GAME
 
 ### BIOS
 
-Emulator supports using a Nintendo Game Boy boot ROM in the executable directory, named: 
-```
-dmg_boot.bin
-```
+Emulator supports using a Nintendo Game Boy / Game Boy Color boot ROM in the executable directory. 
+
+- To use a Game Boy Color bios, include `cgb_boot.bin` in the executable directory
+- To use an orignal Game Boy bios, include `dmg_boot.bin` in the executable directory
+    - if `dmg_boot.bin` is used the emulator will act as an original Game Boy, and as such Game Boy Color games will refuse to boot.
 
 ### Controls
 
@@ -66,6 +67,7 @@ dmg_boot.bin
 ## Features
 
 - Emulates Nintendo Game Boy games
+- Emulates Nintendo Game Boy Color games
 - Output debug information per-frame or per-instruction
 - VRAM viewer window
 - Pause
@@ -73,7 +75,6 @@ dmg_boot.bin
 - Instruction Stepping
 - Fast-Forward
 - Game saves
-- Game Boy Color palette colorisation
 
 ## Supported Cartridge Types
 

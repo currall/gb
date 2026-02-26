@@ -4,7 +4,7 @@
 
 #include <stdint.h>
 
-typedef struct PPU PPU;   // ADD THIS LINE
+typedef struct PPU PPU;
 
 typedef struct {
 
@@ -38,6 +38,7 @@ typedef struct Memory {
 
 	uint8_t* boot_rom;
 	uint8_t boot_rom_enabled;
+	uint8_t boot_rom_type; // none = 0, dmg = 1, cgb = 2
 
 	uint8_t* rom;
 	uint32_t rom_size;

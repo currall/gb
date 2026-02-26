@@ -1,12 +1,15 @@
+// standard libraries
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
-#ifdef _WIN32
+// win32 libraries for reattaching to launch console
+#ifdef _WIN32 
 #include <windows.h>
 #include <stdio.h>
 #endif
 
+// emulator libraries
 #include "audio.h"
 #include "cpu.h"
 #include "debug.h"
@@ -25,22 +28,21 @@
 #define FPS		60
 
 void simulate_boot_rom(Registers* reg, Memory* m) {
-	cpu_init(reg);
+	cpu_boot(reg);
 	mem_boot(m);
 }
 
 char* gb_init(char* file, Registers* reg, Memory* m, Status* s, Audio* audio) {	
 
-	simulate_boot_rom(reg,m);
-
-	uint32_t boot_rom_enabled = read_boot_ROM("dmg_boot.bin",&m->boot_rom); // read boot rom into boot rom memory
+	m->boot_rom_type = read_boot_ROM(&m->boot_rom); // read boot rom into boot rom memory
 	file = read_rom(file,m,s); // read into memory
 	
+	cpu_init(reg);
 	mem_init(m);
 	status_init(s);
 	audio_init(audio, m);
 	
-	if (!boot_rom_enabled) simulate_boot_rom(reg,m); // simulate boot rom if not found
+	if (!m->boot_rom_type) simulate_boot_rom(reg,m); // simulate boot rom if not found
 	if (m->ram_size > 0) load_game(file,m->eram,m->ram_size); // attempt to load save file
 
 	return file;

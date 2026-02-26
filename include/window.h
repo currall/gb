@@ -2,9 +2,9 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
-#include "debug.h"
-
 #include <stdint.h>
+
+typedef struct Status Status;
 
 #define GB_WIDTH  160
 #define GB_HEIGHT 144

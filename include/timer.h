@@ -4,7 +4,7 @@
 
 #include <stdint.h>
 
-#include "registers.h"
+typedef struct Memory Memory;
 
 #define DIV 0xFF04
 #define TIMA 0xFF05

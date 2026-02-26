@@ -1,7 +1,9 @@
-#include "debug.h"
-#include "window.h"
 
 #include <SDL2/SDL.h>
+
+#include "debug.h"
+#include "memory.h"
+#include "window.h"
 
 static SDL_Window*   window   = NULL;
 static SDL_Renderer* renderer = NULL;

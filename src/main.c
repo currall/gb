@@ -17,6 +17,7 @@
 #include "file.h"
 #include "header.h"
 #include "memory.h"
+#include "palette.h"
 #include "ppu.h"
 #include "registers.h"
 #include "rom.h"
@@ -28,8 +29,9 @@
 #define FPS		60
 
 void simulate_boot_rom(Registers* reg, Memory* m) {
-	cpu_boot(reg);
+	reg->PC = 0x100;
 	mem_boot(m);
+	if (!m->cgb_mode) palette_init(m->ppu);
 }
 
 char* gb_init(char* file, Registers* reg, Memory* m, Status* s, Audio* audio) {	
@@ -42,7 +44,12 @@ char* gb_init(char* file, Registers* reg, Memory* m, Status* s, Audio* audio) {
 	status_init(s);
 	audio_init(audio, m);
 	
-	if (!m->boot_rom_type) simulate_boot_rom(reg,m); // simulate boot rom if not found
+	switch (m->boot_rom_type) {
+		case 0: simulate_boot_rom(reg,m); break; // simulate boot rom if not found
+		case 1: palette_init(m->ppu); break; // dmg boot rom
+	}
+	printf("boot rom type %d\n", m->boot_rom_type);
+
 	if (m->ram_size > 0) load_game(file,m->eram,m->ram_size); // attempt to load save file
 
 	return file;

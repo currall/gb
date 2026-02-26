@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "debug.h"
+#include "palette.h"
 #include "ppu.h"
 #include "memory.h"
 
@@ -21,18 +22,6 @@ uint32_t framebuffer[160 * 144];
 uint8_t priority_map[160]; // allows background to have priority over sprites. stores one scanline
 
 uint32_t palette[4] = {0xFFFFFFFF, 0xFFC0C0C0, 0xFF606060, 0xFF000000}; // use only grey palette for gb for now
-
-uint32_t gbc_to_rgb(uint16_t color16) {
-    uint8_t r = (color16 & 0x1F);
-    uint8_t g = (color16 >> 5) & 0x1F;
-    uint8_t b = (color16 >> 10) & 0x1F;
-
-    uint8_t R = (r << 3) | (r >> 2);
-    uint8_t G = (g << 3) | (g >> 2);
-    uint8_t B = (b << 3) | (b >> 2);
-
-    return 0xFF000000 | (R << 16) | (G << 8) | B;
-}
 
 void request_stat_interrupt(Memory* m) {
     uint8_t iflags = read8(m, IF);
@@ -171,10 +160,17 @@ void draw_bg(PPU* ppu, uint32_t* framebuffer, Memory* m) {
 
         int color_idx = ((high >> bit) & 1) << 1 | ((low >> bit) & 1);
         priority_map[x] = ((attr >> 7) & 0x01) << 7 | (color_idx & 0x03);
-        
-        int palette_addr = (cgb_palette * 8) + (color_idx * 2);
-        uint16_t color16 = ppu->bg_palette[palette_addr] | (ppu->bg_palette[palette_addr + 1] << 8);
-        framebuffer[scanline * 160 + x] = gbc_to_rgb(color16);
+
+        if (m->cgb_mode) {
+            int palette_addr = (cgb_palette * 8) + (color_idx * 2);
+            uint16_t color16 = ppu->bg_palette[palette_addr] | (ppu->bg_palette[palette_addr + 1] << 8);
+            framebuffer[scanline * 160 + x] = gbc_to_rgb(color16);
+        } else {
+            uint8_t shade = (bgp >> (color_idx * 2)) & 0x03;
+            int palette_addr = (0 * 8) + (shade * 2);
+            uint16_t color =  ppu->bg_palette[palette_addr] | (ppu->bg_palette[palette_addr + 1] << 8);
+            framebuffer[ppu->scanline * 160 + x] = gbc_to_rgb(color);
+        }
 
     }
 	if (window_enable) ppu->window_line++;
@@ -229,6 +225,7 @@ void draw_fg(PPU* ppu, uint32_t* framebuffer, Memory* m) {
         uint8_t low  = read_vram(m, tile_addr, vram_bank);
         uint8_t high = read_vram(m, tile_addr + 1, vram_bank);
 
+        uint16_t obj_palette_idx = (attr & 0x10) ? 1 : 0;
         uint16_t palette_reg_addr = (attr & 0x10) ? 0xFF49 : 0xFF48;
         uint8_t palette_reg = read8(m, palette_reg_addr);
 		
@@ -260,9 +257,17 @@ void draw_fg(PPU* ppu, uint32_t* framebuffer, Memory* m) {
             }
 			
             if (can_draw) {
-                int palette_addr = (cgb_palette * 8) + (color_idx * 2); 
-                uint16_t color16 = ppu->obj_palette[palette_addr] | (ppu->obj_palette[palette_addr + 1] << 8);
-                framebuffer[ppu->scanline * 160 + screen_x] = gbc_to_rgb(color16);
+                if (m->cgb_mode) {
+                    int palette_addr = (cgb_palette * 8) + (color_idx * 2); 
+                    uint16_t color16 = ppu->obj_palette[palette_addr] | (ppu->obj_palette[palette_addr + 1] << 8);
+                    framebuffer[ppu->scanline * 160 + screen_x] = gbc_to_rgb(color16);
+                } else {
+                    if (color_idx == 0) continue;
+                    uint8_t shade = (palette_reg >> (color_idx * 2)) & 0x03;
+                    int palette_addr = (obj_palette_idx * 8) + (shade * 2);
+                    uint16_t color =  ppu->obj_palette[palette_addr] | (ppu->obj_palette[palette_addr + 1] << 8);
+                    framebuffer[ppu->scanline * 160 + screen_x] = gbc_to_rgb(color);
+                }
             }
 		}
 	}

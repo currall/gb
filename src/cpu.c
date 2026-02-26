@@ -1070,20 +1070,6 @@ void cp_x(Registers* reg, uint8_t operand) {cpu_cp(reg,operand);}
 // 0xFF
 void rst_38(Registers* reg, Memory* m) { rst(reg, m, 0x38); reg->pc_changed = 1;}
 
-void cpu_boot(Registers* reg) {
-	reg->BC = 0x0013;
-	reg->DE = 0x00D8;
-	reg->HL = 0x014D;
-	reg->AF = 0x11B0;
-	reg->PC = 0x0100;
-	reg->SP = 0xFFFE; // stack starts at top of memory
-	
-	reg->IME = 0;
-	reg->IME_delay = 0;
-	reg->halted = 0;
-	reg->halt_bug = 0;
-}
-
 void cpu_init(Registers* reg) {
 
 	reg->BC = 0x0013;

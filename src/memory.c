@@ -61,37 +61,6 @@ void mem_boot(Memory* m) {
     m->io[0x25] = 0xF3; // nr51
     m->io[0x26] = 0xF1; // nr52
 
-    // --- PPU ---
-    m->io[0x40] = 0x91; // LCDC
-    m->io[0x41] = 0x85; // STAT
-    m->io[0x42] = 0x00; // SCY
-    m->io[0x43] = 0x00; // SCX
-    m->io[0x44] = 0x00; // LY
-    m->io[0x45] = 0x00; // LYC
-    m->io[0x47] = 0xFC; // BGP
-    m->io[0x48] = 0xFF; // OBP0
-    m->io[0x49] = 0xFF; // OBP1
-    m->io[0x4A] = 0x00; // WY
-    m->io[0x4B] = 0x00; // WX
-    
-    m->ppu->obj_palette[0] = 0xFF;
-    m->ppu->obj_palette[1] = 0x7F; 
-    m->ppu->obj_palette[2] = 0x94;
-    m->ppu->obj_palette[3] = 0x52; 
-    m->ppu->obj_palette[4] = 0x4A; 
-    m->ppu->obj_palette[5] = 0x29; 
-    m->ppu->obj_palette[6] = 0x00; 
-    m->ppu->obj_palette[7] = 0x00; 
-    
-    m->ppu->bg_palette[0] = 0xFF;
-    m->ppu->bg_palette[1] = 0x7F; 
-    m->ppu->bg_palette[2] = 0x94;
-    m->ppu->bg_palette[3] = 0x52; 
-    m->ppu->bg_palette[4] = 0x4A; 
-    m->ppu->bg_palette[5] = 0x29; 
-    m->ppu->bg_palette[6] = 0x00; 
-    m->ppu->bg_palette[7] = 0x00; 
-
     // --- CGB ---
     m->io[0x4D] = 0x7E;
     
@@ -106,13 +75,24 @@ void mem_init(Memory* m) {
     m->cgb_speed = 1;
     m->vram_bank = 0;
     m->wram_bank = 1;
-    memset(m->ppu->bg_palette, 0x00, sizeof(m->ppu->bg_palette));
-    memset(m->ppu->obj_palette, 0x00, sizeof(m->ppu->obj_palette));
 
     // --- Joypad --- (needs initialising even if boot rom is present)
     m->io[0x00] = 0xCF;
     m->j.dpad = 0x0F;
     m->j.buttons = 0x0F;
+    
+    // --- PPU ---
+    m->io[0x40] = 0x91; // LCDC
+    m->io[0x41] = 0x85; // STAT
+    m->io[0x42] = 0x00; // SCY
+    m->io[0x43] = 0x00; // SCX
+    m->io[0x44] = 0x00; // LY
+    m->io[0x45] = 0x00; // LYC
+    m->io[0x47] = 0xFC; // BGP
+    m->io[0x48] = 0xFF; // OBP0
+    m->io[0x49] = 0xFF; // OBP1
+    m->io[0x4A] = 0x00; // WY
+    m->io[0x4B] = 0x00; // WX 
     
     // -- MBC ---
     m->mbc_type = get_mbc_type(m->cartridge_type);
@@ -498,7 +478,7 @@ uint8_t raw_read(Memory *m, uint16_t addr) {
             return m->boot_rom[addr];
         }
         
-        if (m->boot_rom_type == 1 && addr >= 0x0200 && addr < 0x0900) { // extra space for cgb boot roms
+        if (m->boot_rom_type == 2 && addr >= 0x0200 && addr < 0x0900) { // extra space for cgb boot roms
             return m->boot_rom[addr]; 
         }
     }

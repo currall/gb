@@ -102,7 +102,7 @@ char* read_rom(char* file, Memory* m, Status* s){
 }
 
 int read_boot_ROM(char* file, uint8_t** m){
-	uint32_t boot_rom_size = load_file(file,m,0);
+	uint32_t boot_rom_size = load_file(file,m,1);
     return boot_rom_size;
 }
 

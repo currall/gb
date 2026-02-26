@@ -73,6 +73,9 @@ void mem_boot(Memory* m) {
     m->io[0x49] = 0xFF; // OBP1
     m->io[0x4A] = 0x00; // WY
     m->io[0x4B] = 0x00; // WX
+
+    // --- CGB ---
+    m->io[0x4D] = 0x7E;
     
     // --- Boot ROM ---
     m->boot_rom_enabled = 0;
@@ -392,9 +395,16 @@ void write8(Memory* m, uint16_t addr, uint8_t value) {
         m->vram_bank = value & 0x01; // CGB vram bank no
     }
 	
-    if (addr == 0xFF50 && value != 0 && m->boot_rom_enabled) {
-        m->boot_rom_enabled = 0;
-		printf("[MEMORY] Boot ROM disabled!\n");
+    if (addr == 0xFF50 && m->boot_rom_enabled) {
+        if (m->cgb_mode && value == 1){
+            m->boot_rom_enabled = 0;
+            printf("[MEMORY] Boot ROM disabled!\n");
+        }
+        else if (!m->cgb_mode && value != 0){
+            m->boot_rom_enabled = 0;
+            printf("[MEMORY] Boot ROM disabled!\n");
+        }
+        return;
     }
 
     if (addr == 0xFF55) {
@@ -471,8 +481,15 @@ uint8_t raw_read(Memory *m, uint16_t addr) {
         addr -= 0x2000;
         
     // boot rom
-    if (m->boot_rom_enabled && addr < 0x0100) {
-        return m->boot_rom[addr];
+    if (m->boot_rom_enabled) {
+        if (addr < 0x0100) {
+            return m->boot_rom[addr];
+        }
+        
+        // extra space for cgb only boot rom
+        if (m->cgb_mode && addr >= 0x0200 && addr < 0x0900) {
+            return m->boot_rom[addr-0x100]; 
+        }
     }
 
     // mbc

@@ -29,8 +29,10 @@ void simulate_boot_rom(Registers* reg, Memory* m) {
 	mem_boot(m);
 }
 
-char* gb_init(char* file, Registers* reg, Memory* m, Status* s, Audio* audio) {
-	
+char* gb_init(char* file, Registers* reg, Memory* m, Status* s, Audio* audio) {	
+
+	simulate_boot_rom(reg,m);
+
 	uint32_t boot_rom_enabled = read_boot_ROM("dmg_boot.bin",&m->boot_rom); // read boot rom into boot rom memory
 	file = read_rom(file,m,s); // read into memory
 	
@@ -128,7 +130,7 @@ int main(int argc, char *argv[]) {
 		
 		// end timer
 		
-		if (s.frame_tracker > ((CPU_HZ * m.cgb_speed) / 60)) { // code to run per-frame
+		if (s.frame_tracker > (CPU_HZ / 60)) { // code to run per-frame
 
 			// input
 			check_events(&s,&m);
@@ -152,7 +154,7 @@ int main(int argc, char *argv[]) {
 			if (s.advance_frame) {s.paused=2;s.advance_frame=0;} // frame stepping
 
 			// === ADD ADDITIONAL PER-FRAME DEBUG CODE HERE ===
-
+			
 			// =====================================
 			
 			if (!s.fast_forward) { // skip frame delay if in fast forward
@@ -166,7 +168,7 @@ int main(int argc, char *argv[]) {
 		}
 
 		// check if 1 second has passed
-		if (s.second_tracker > (CPU_HZ * m.cgb_speed)){ // code to run per emulated second
+		if (s.second_tracker > (CPU_HZ)){ // code to run per emulated second
 
 			uint64_t new_clock = clock();
 			uint64_t ticks = new_clock - second_count;

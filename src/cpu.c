@@ -1461,6 +1461,7 @@ int cpu_step(Memory* m, Registers* reg){
 			reg->IME = 1;
 	}
 
+	if (m->cgb_speed == 2) cycles *= 0.5;
 	
 	return cycles;
 }

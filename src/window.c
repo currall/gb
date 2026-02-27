@@ -10,8 +10,23 @@ static SDL_Renderer* renderer = NULL;
 static SDL_Texture*  texture  = NULL;
 uint32_t window_id = 0;
 
+void controller_init(){
+	SDL_GameControllerEventState(SDL_ENABLE);
+	SDL_GameController* controller = NULL;
+
+	for (int i = 0; i < SDL_NumJoysticks(); i++) {
+		if (SDL_IsGameController(i)) {
+			controller = SDL_GameControllerOpen(i);
+			if (controller) {
+				printf("[INPUT] Opened controller: %s\n", SDL_GameControllerName(controller));
+				break;
+			}
+		}
+	}
+}
+
 int window_init(char* file) {
-    if (SDL_Init(SDL_INIT_VIDEO) != 0)
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) != 0)
         return 0;
 	
 	char title[256];
@@ -40,6 +55,8 @@ int window_init(char* file) {
 	window_id = SDL_GetWindowID(window);
 	SDL_RaiseWindow(window);
 	SDL_SetWindowInputFocus(window);
+
+	controller_init(); // use controller
 
     return renderer && texture;
 }
@@ -214,7 +231,30 @@ void check_events(Status* s, Memory* m){
 			if (key == SDLK_f) 
 				s->fast_forward = 0; // only ff on hold, do not toggle
 		}
-		
+		if (e.type == SDL_CONTROLLERBUTTONDOWN) {
+			switch (e.cbutton.button) {
+				case SDL_CONTROLLER_BUTTON_DPAD_UP: joypad_set_button(m, JP_UP, 1, 0); break;
+				case SDL_CONTROLLER_BUTTON_DPAD_DOWN: joypad_set_button(m, JP_DOWN, 1, 0); break;
+				case SDL_CONTROLLER_BUTTON_DPAD_LEFT: joypad_set_button(m, JP_LEFT, 1, 0); break;
+				case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: joypad_set_button(m, JP_RIGHT, 1, 0); break;
+				case SDL_CONTROLLER_BUTTON_A: joypad_set_button(m, JP_A, 1, 1); break;
+				case SDL_CONTROLLER_BUTTON_B: joypad_set_button(m, JP_B, 1, 1); break;
+				case SDL_CONTROLLER_BUTTON_START: joypad_set_button(m, JP_START, 1, 1); break;
+				case SDL_CONTROLLER_BUTTON_BACK: joypad_set_button(m, JP_SELECT, 1, 1); break;
+			}
+		}
+		if (e.type == SDL_CONTROLLERBUTTONUP) {
+			switch (e.cbutton.button) {
+				case SDL_CONTROLLER_BUTTON_DPAD_UP: joypad_set_button(m, JP_UP, 0, 0); break;
+				case SDL_CONTROLLER_BUTTON_DPAD_DOWN: joypad_set_button(m, JP_DOWN, 0, 0); break;
+				case SDL_CONTROLLER_BUTTON_DPAD_LEFT: joypad_set_button(m, JP_LEFT, 0, 0); break;
+				case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: joypad_set_button(m, JP_RIGHT, 0, 0); break;
+				case SDL_CONTROLLER_BUTTON_A: joypad_set_button(m, JP_A, 0, 1); break;
+				case SDL_CONTROLLER_BUTTON_B: joypad_set_button(m, JP_B, 0, 1); break;
+				case SDL_CONTROLLER_BUTTON_START: joypad_set_button(m, JP_START, 0, 1); break;
+				case SDL_CONTROLLER_BUTTON_BACK: joypad_set_button(m, JP_SELECT, 0, 1); break;
+			}
+		}
 	}
 }
 

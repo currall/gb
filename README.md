@@ -15,9 +15,10 @@ main.exe PATH_TO_GAME
 
 Emulator supports using a Nintendo Game Boy / Game Boy Color boot ROM in the executable directory. 
 
-- To use a Game Boy Color bios, include `cgb_boot.bin` in the executable directory
-- To use an orignal Game Boy bios, include `dmg_boot.bin` in the executable directory
+- To use a Game Boy Color bios, include `cgb_boot.bin` in the executable directory.
+- To use an orignal Game Boy bios, include `dmg_boot.bin` in the executable directory.
     - if `dmg_boot.bin` is used the emulator will act as an original Game Boy, and as such Game Boy Color games will refuse to boot.
+    - `cgb_boot.bin` will be prioritised over `dmg_boot.bin`.
 
 ### Controls
 
@@ -58,30 +59,24 @@ Emulator supports using a Nintendo Game Boy / Game Boy Color boot ROM in the exe
 | 3 | DMG Game Boy Green |
 | 4 | Monochrome Pink |
 | 5 | Yellow and Red (Tetris) |
-| 6 | Mario Land 2 |
-| 7 | Wario Land |
-| 8 | Blue and Red (Dr. Mario) |
-| 9 | Lime Green and Pink |
-| 0 | Black and Yellow (Inverted) |
+| 6 | Blue and Green (Alleyway) |
+| 7 | Yellow and Pale Blue (Mario Land 2) |
+| 8 | Grey, Cyan and Orange (Wario Land) |
+| 9 | Blue and Red (Dr. Mario) |
+| 0 | Red and Green (Pokemon Red) |
 
 ## Features
 
 - Emulates Nintendo Game Boy games
 - Emulates Nintendo Game Boy Color games
+- Controller Support
+- Game saves
 - Output debug information per-frame or per-instruction
 - VRAM viewer window
 - Pause
 - Frame Stepping
 - Instruction Stepping
 - Fast-Forward
-- Game saves
-
-## Supported Cartridge Types
-
-- No MBC (MBC0)
-- MBC1
-- MBC3 (No RTC support)
-- MBC5
 
 <br>
 

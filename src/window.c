@@ -3,6 +3,7 @@
 
 #include "debug.h"
 #include "memory.h"
+#include "palette.h"
 #include "window.h"
 
 static SDL_Window*   window   = NULL;
@@ -187,16 +188,16 @@ void check_events(Status* s, Memory* m){
 				s->show_vram_viewer = !s->show_vram_viewer;
 			// palette
 			switch (key) {
-				case SDLK_1: s->palette_no = PALETTE_BW; break; // black and white
-				case SDLK_2: s->palette_no = s->game_palette; break; // game specific palette
-				case SDLK_3: s->palette_no = PALETTE_DMG; break;
-				case SDLK_4: s->palette_no = PALETTE_PINK; break;
-				case SDLK_5: s->palette_no = PALETTE_TETRIS; break;
-				case SDLK_6: s->palette_no = PALETTE_MARIOLAND2; break;
-				case SDLK_7: s->palette_no = PALETTE_WARIOLAND; break;
-				case SDLK_8: s->palette_no = PALETTE_DR_MARIO; break;
-				case SDLK_9: s->palette_no = PALETTE_1C; break;
-				case SDLK_0: s->palette_no = PALETTE_INVERTED; break;
+				case SDLK_1: apply_palette(m->ppu, 0, 1); break; // black and white
+				case SDLK_2: apply_palette(m->ppu, s->game_id, 0); break; // game specific palette
+				case SDLK_3: apply_palette(m->ppu, 1, 1); break;
+				case SDLK_4: apply_palette(m->ppu, 2, 1); break;
+				case SDLK_5: apply_palette(m->ppu, ID_TETRIS, 0); break;
+				case SDLK_6: apply_palette(m->ppu, ID_ALLEYWAY, 0); break;
+				case SDLK_7: apply_palette(m->ppu, ID_MARIO_LAND_2, 0); break;
+				case SDLK_8: apply_palette(m->ppu, ID_WARIO_LAND, 0); break;
+				case SDLK_9: apply_palette(m->ppu, ID_DR_MARIO, 0); break;
+				case SDLK_0: apply_palette(m->ppu, ID_POKEMONRED, 0); break;
 			}
 
 		} 

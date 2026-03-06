@@ -71,6 +71,7 @@ char* read_rom(char* file, Memory* m, Status* s){
     // gbc palette selection
     uint8_t game_id = encode_title(h.ROMName);
     printf("Game ID: %x\n",game_id);
+    s->game_id = game_id;
 
 	return file;
 

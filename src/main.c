@@ -28,10 +28,10 @@
 #define CPU_HZ 	4194304
 #define FPS		60
 
-void simulate_boot_rom(Registers* reg, Memory* m) {
+void simulate_boot_rom(Registers* reg, Memory* m, uint8_t game_id) {
 	reg->PC = 0x100;
 	mem_boot(m);
-	if (!m->cgb_mode) palette_init(m->ppu);
+	if (!m->cgb_mode) palette_init(m->ppu, game_id);
 }
 
 char* gb_init(char* file, Registers* reg, Memory* m, Status* s, Audio* audio) {	
@@ -45,8 +45,8 @@ char* gb_init(char* file, Registers* reg, Memory* m, Status* s, Audio* audio) {
 	audio_init(audio, m);
 	
 	switch (m->boot_rom_type) {
-		case 0: simulate_boot_rom(reg,m); break; // simulate boot rom if not found
-		case 1: palette_init(m->ppu); break; // dmg boot rom
+		case 0: simulate_boot_rom(reg,m, s->game_id); break; // simulate boot rom if not found
+		case 1: palette_init(m->ppu, s->game_id); break; // dmg boot rom
 	}
 	printf("boot rom type %d\n", m->boot_rom_type);
 
@@ -95,11 +95,15 @@ int main(int argc, char *argv[]) {
 	vram_window_init(); // start vram window in background
 	
 	// cpu loop
-	clock_t frame_start = clock();
+	float frame_start = clock();
 	clock_t second_count = clock();
 	if (PRINT_DEBUG) printf("[MAIN] cpu cycle start\n");
+
+	uint64_t opcodes[256] = {0};
 	
 	while(s.running){ // main loop
+
+		//opcodes[read8(&m, reg.PC)]++;
 		
 		// cpu cycles
 		int c = cpu_step(&m,&reg);
@@ -170,10 +174,12 @@ int main(int argc, char *argv[]) {
 				while (((double)(clock() - frame_start) / CLOCKS_PER_SEC) < (1.0 / 60.0)) {
 					// do nothing until frame time has passed
 				}
+				frame_start += (float)CLOCKS_PER_SEC / 60;
+			} else {
+				frame_start = clock();
 			}
 			// reset frame cycle counter
 			s.frame_tracker = 0;
-			frame_start = clock();
 		}
 
 		// check if 1 second has passed
@@ -197,6 +203,13 @@ int main(int argc, char *argv[]) {
 
 	// if game has external ram, save it to save file
 	if (m.ram_size > 0) save_game(file, m.eram, m.ram_size);
+
+	for (int row = 0;row<16;row++){
+		for (int column = 0;column<16;column++){
+			printf("%d ",opcodes[row*16 + column]);
+		}
+		printf("\n");
+	}
 	
 	window_destroy();
 	vram_window_destroy();

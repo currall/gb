@@ -45,7 +45,6 @@ void status_init(Status* s) {
 	s->show_cycles = 		1;
 
 	// --- video ---
-	s->palette_no = s->game_palette;
 	s->show_vram_viewer = 0;
 	
 }

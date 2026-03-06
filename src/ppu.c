@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "debug.h"
+#include "palette.h"
 #include "ppu.h"
 #include "memory.h"
 
@@ -20,54 +21,7 @@ Source: https://gbdev.io/pandocs/Rendering.html
 uint32_t framebuffer[160 * 144];
 uint8_t priority_map[160]; // allows background to have priority over sprites. stores one scanline
 
-uint32_t bg_palette[][4] = {
-	{0xFFFFFFFF, 0xFFC0C0C0, 0xFF606060, 0xFF000000}, // black and white
-	{0xFF9BBC0F, 0xFF8BAC0F, 0xFF306230, 0xFF0F380F}, // gameboy green
-	{0xffffe5ec, 0xFFffc2d1, 0xFFc9184a, 0xFF800f2f}, // pink
-	{0xFFFFFFFF, 0xFF7BFF31, 0xFF0063C5, 0xFF000000}, // palette a
- 	{0xFF000000, 0xFF008484, 0xFFFFDE00, 0xFFFFFFFF}, // palette b
-	{0xFFFFFFFF, 0xFFFFFF00, 0xFFFF0000, 0xFF000000}, // tetris
-	{0xFFB5B5FF, 0xFFFFFF94, 0xFFAD5A42, 0xFF000000}, // mario land 
-	{0xFFFFFFCE, 0xFF63EFEF, 0xFF9C8431, 0xFF5A5A5A}, // mario land 2
-	{0xFFFFFFFF, 0xFFADAD84, 0xFF42737B, 0xFF000000}, // wario land
-	{0xFFFFFFFF, 0xFFADAD84, 0xFF42737B, 0xFF000000}, // wario land 2
-	{0xFFFFFFFF, 0xFF63A5FF, 0xFF0000FF, 0xFF000000}, // dr mario
-	{0xFFFFFFFF, 0xFFFF8484, 0xFF943A3A, 0xFF000000}, // zelda links awakening
-	{0xFFFFFFFF, 0xFFFF8484, 0xFF943A3A, 0xFF000000}, // pokemon red
-	{0xFFA59CFF, 0xFFFFFF00, 0xFF006300, 0xFF000000} // alleyway
-};
-uint32_t obj0_palette[][4] = { // OBP0
-	{0xFFFFFFFF, 0xFFC0C0C0, 0xFF606060, 0xFF000000}, // black and white
-	{0xFF9BBC0F, 0xFF8BAC0F, 0xFF306230, 0xFF0F380F}, // gameboy green
-	{0xffffe5ec, 0xFFffc2d1, 0xFFc9184a, 0xFF800f2f}, // pink
-	{0xFFFFFFFF, 0xFFFF8484, 0xFF943A3A, 0xFF000000}, // palette a
- 	{0xFF000000, 0xFF008484, 0xFFFFDE00, 0xFFFFFFFF}, // palette b
-	{0xFFFFFFFF, 0xFFFFFF00, 0xFFFF0000, 0xFF000000}, // tetris
-	{0xFF000000, 0xFFFFFFFF, 0xFFFF8484, 0xFF943A3A}, // mario land
-	{0xFFFFFFFF, 0xFFFF7300, 0xFF944200, 0xFF000000}, // mario land 2
-	{0xFFFFFFFF, 0xFFFF7300, 0xFF944200, 0xFF000000}, // wario land
-	{0xFFFFFFFF, 0xFFFFAD63, 0xFF843100, 0xFF000000}, // wario land 2
-	{0xFFFFFFFF, 0xFF63A5FF, 0xFF0000FF, 0xFF000000}, // dr mario
-	{0xFFFFFFFF, 0xFF00FF00, 0xFF318400, 0xFF004A00}, // zelda links awakening
-	{0xFFFFFFFF, 0xFF7BFF31, 0xFF008400, 0xFF000000}, // pokemon red
-	{0xFFA59CFF, 0xFFFFFF00, 0xFF006300, 0xFF000000} // alleyway
-};
-uint32_t obj1_palette[][4] = { // OBP1
-	{0xFFFFFFFF, 0xFFC0C0C0, 0xFF606060, 0xFF000000}, // black and white
-	{0xFF9BBC0F, 0xFF8BAC0F, 0xFF306230, 0xFF0F380F}, // gameboy green
-	{0xffffe5ec, 0xFFffc2d1, 0xFFc9184a, 0xFF800f2f}, // pink
-	{0xFFFFFFFF, 0xFFFF8484, 0xFF943A3A, 0xFF000000}, // palette a
- 	{0xFF000000, 0xFF008484, 0xFFFFDE00, 0xFFFFFFFF}, // palette b
-	{0xFFFFFFFF, 0xFF5ABDFF, 0xFFFF0000, 0xFF0000FF}, // tetris
-	{0xFF000000, 0xFFFFFFFF, 0xFFFF8484, 0xFF943A3A}, // mario land
-	{0xFFFFFFFF, 0xFF63A5FF, 0xFF0000FF, 0xFF000000}, // mario land 2
-	{0xFFFFFFFF, 0xFF5ABDFF, 0xFFFF0000, 0xFF0000FF}, // wario land
-	{0xFFFFFFFF, 0xFF63A5FF, 0xFF0000FF, 0xFF000000}, // wario land 2
-	{0xFFFFFFFF, 0xFFFF8484, 0xFF943A3A, 0xFF000000}, // dr mario
-	{0xFFFFFFFF, 0xFF63A5FF, 0xFF0000FF, 0xFF000000}, // zelda links awakening
-	{0xFFFFFFFF, 0xFFFF8484, 0xFF943A3A, 0xFF000000}, // pokemon red
-	{0xFFA59CFF, 0xFFFFFF00, 0xFF006300, 0xFF000000} // alleyway
-};
+uint32_t palette[4] = {0xFFFFFFFF, 0xFFC0C0C0, 0xFF606060, 0xFF000000}; // use only grey palette for gb for now
 
 void request_stat_interrupt(Memory* m) {
     uint8_t iflags = read8(m, IF);
@@ -112,7 +66,7 @@ void ppu_init(PPU* ppu, Memory* m) {
     ppu->frame_ready = 0;
 }
 
-void draw_bg(PPU* ppu, uint32_t* framebuffer, Memory* m, int palette_no) {
+void draw_bg(PPU* ppu, uint32_t* framebuffer, Memory* m) {
 	/*
 	screen is drawn scanline at a time.
 	for each pixel find the tile being drawn and the pixel in the tile
@@ -131,10 +85,10 @@ void draw_bg(PPU* ppu, uint32_t* framebuffer, Memory* m, int palette_no) {
 
 	uint8_t lcdc = read8(m, LCDC);
 	int scanline = ppu->scanline;
-    // white background using lcdc
-    if (!(lcdc & 0x01)) {
+	// white background using lcdc only for dmg
+    if (!m->cgb_mode && !(lcdc & 0x01)) {
         for (int x = 0; x < 160; x++) {
-            framebuffer[scanline * 160 + x] = bg_palette[palette_no][0]; 
+            framebuffer[scanline * 160 + x] = palette[0]; 
             priority_map[x] = 0; // no priority over sprites
         }
         return;
@@ -152,8 +106,10 @@ void draw_bg(PPU* ppu, uint32_t* framebuffer, Memory* m, int palette_no) {
     int is_signed = !(lcdc & 0x10); 
 
     for (int x = 0; x < 160; x++) {
+        int window_x_trigger = wx - 7;
+        if (window_x_trigger < 0) window_x_trigger = 0; // prevent wx - 7 being less than 0
 
-		int using_window = window_enable && (x >= wx - 7);
+        int using_window = window_enable && (x >= window_x_trigger);
 
 		uint16_t tile_map;
         int tile_row_idx; // "y" inside the map
@@ -176,64 +132,100 @@ void draw_bg(PPU* ppu, uint32_t* framebuffer, Memory* m, int palette_no) {
         }
 
         uint16_t tile_address = tile_map + (tile_row_idx * 32) + tile_col_idx;
-        uint8_t tile_id = read8(m, tile_address);
+        uint8_t tile_id = read_vram(m, tile_address, 0);
+	
+		// read tile attributes
+		uint8_t attr = read_vram(m, tile_address, 1);
+		int cgb_palette	   = attr & 0x07;
+		int vram_bank      = (attr >> 3) & 1;
+		int h_flip         = (attr >> 5) & 1;
+		int v_flip         = (attr >> 6) & 1;
 
+		// tile data
         uint16_t current_tile_addr;
         if (is_signed) {
-             current_tile_addr = 0x9000 + ((int8_t)tile_id) * 16;
+			current_tile_addr = 0x9000 + ((int8_t)tile_id) * 16;
         } else {
-             current_tile_addr = 0x8000 + tile_id * 16;
+			current_tile_addr = 0x8000 + tile_id * 16;
         }
+		
+		// handle flip
+		if (v_flip) pixel_y = 7 - pixel_y;
+		int bit;
+		if (h_flip) bit = pixel_x;
+		else bit = 7 - pixel_x;
 
-        uint8_t low  = read8(m, current_tile_addr + pixel_y * 2);
-        uint8_t high = read8(m, current_tile_addr + pixel_y * 2 + 1);
+        uint8_t low  = read_vram(m, current_tile_addr + pixel_y * 2, vram_bank);
+        uint8_t high = read_vram(m, current_tile_addr + pixel_y * 2 + 1, vram_bank);
 
-        int bit = 7 - pixel_x;
         int color_idx = ((high >> bit) & 1) << 1 | ((low >> bit) & 1);
-        
-        priority_map[x] = color_idx;
-        
-        int shade = (bgp >> (color_idx * 2)) & 0x03;
-        framebuffer[scanline * 160 + x] = bg_palette[palette_no][shade];
+        priority_map[x] = ((attr >> 7) & 0x01) << 7 | (color_idx & 0x03);
+
+        if (m->cgb_mode) {
+            int palette_addr = (cgb_palette * 8) + (color_idx * 2);
+            uint16_t color16 = ppu->bg_palette[palette_addr] | (ppu->bg_palette[palette_addr + 1] << 8);
+            framebuffer[scanline * 160 + x] = gbc_to_rgb(color16);
+        } else {
+            uint8_t shade = (bgp >> (color_idx * 2)) & 0x03;
+            int palette_addr = (0 * 8) + (shade * 2);
+            uint16_t color =  ppu->bg_palette[palette_addr] | (ppu->bg_palette[palette_addr + 1] << 8);
+            framebuffer[ppu->scanline * 160 + x] = gbc_to_rgb(color);
+        }
 
     }
 	if (window_enable) ppu->window_line++;
 }
 
-void draw_fg(int scanline, uint32_t* framebuffer, Memory* m, int palette_no) {
+void draw_fg(PPU* ppu, uint32_t* framebuffer, Memory* m) {
 	
 	uint8_t lcdc = read8(m, LCDC);
     if (!(lcdc & 0x02)) return; // obj enable flag
 
     int sprite_height = (lcdc & 0x04) ? 16 : 8;
     int sprites_drawn = 0; // gameboy has limit of 10 sprites per scanline
+
+    int visible_sprites[10];
+    int count = 0;
+
+    for (int i = 0; i < 40 && count < 10; i++) {
+        int y = read8(m, 0xFE00 + i * 4) - 16;
+        if (ppu->scanline >= y && ppu->scanline < y + sprite_height) {
+            visible_sprites[count++] = i;
+        }
+    }
 	
-	for (int i = 0; i < 40 && sprites_drawn < 10; i++) { // 40 sprites total, 10 per scanline
-		uint16_t oam_addr = 0xFE00 + i * 4;
+	for (int i = count - 1; i >= 0; i--) {
+        int sprite_idx = visible_sprites[i];
+        uint16_t oam_addr = 0xFE00 + sprite_idx * 4;
         
         int y = read8(m, oam_addr) - 16;
         int x = read8(m, oam_addr + 1) - 8;
         uint8_t tile_id = read8(m, oam_addr + 2);
-        uint8_t attr = read8(m, oam_addr + 3); // attributes
-		/* attributes 0xPYXp----
-		P: priority - sprite drawn behind bg
-		Y: vertical flip (y)
-		X: horizontal flip (x)
-		p: Palette select (OBP0 or OBP1)
-		*/
-	
-        if (scanline < y || scanline >= y + sprite_height) continue; // skip if offscreen
+		uint8_t attr = read8(m, oam_addr + 3);
+
+        if (ppu->scanline < y || ppu->scanline >= y + sprite_height) continue; // skip if offscreen
 		sprites_drawn++;
 
-		if (sprite_height == 16) tile_id &= 0xFE; // lsb of index is ignored for 16px tile
+		// if (sprite_height == 16) tile_id &= 0xFE; // lsb of index is ignored for 16px tile
+                   
+        int cgb_palette = attr & 0x07;
+        int vram_bank = (attr >> 3) & 1;  // vram bank of tile
 
-        int line = scanline - y; // line inside tile
+        int line = ppu->scanline - y; // line inside tile
         if (attr & 0x40) line = sprite_height - 1 - line; // vertical flip attribute
+        if (sprite_height == 16) { // 16px tile handling for cgb
+            tile_id &= 0xFE; 
+            if (line >= 8) {
+                tile_id |= 0x01;
+                line -= 8;
+            }
+        }
 		
 		uint16_t tile_addr = 0x8000 + tile_id * 16 + line * 2;
-        uint8_t low  = read8(m, tile_addr);
-        uint8_t high = read8(m, tile_addr + 1);
+        uint8_t low  = read_vram(m, tile_addr, vram_bank);
+        uint8_t high = read_vram(m, tile_addr + 1, vram_bank);
 
+        uint16_t obj_palette_idx = (attr & 0x10) ? 1 : 0;
         uint16_t palette_reg_addr = (attr & 0x10) ? 0xFF49 : 0xFF48;
         uint8_t palette_reg = read8(m, palette_reg_addr);
 		
@@ -248,12 +240,35 @@ void draw_fg(int scanline, uint32_t* framebuffer, Memory* m, int palette_no) {
 			if (color_idx == 0) continue; // hide transparent pixels
 			
 			if (screen_x < 0 || screen_x >= 160) continue; // skip sprite if off-screen
-			if ((attr & 0x80) && priority_map[screen_x] != 0) continue; // skip if bg over sprite (prioity map)
+
+            uint8_t bg_data = priority_map[screen_x];
+            int bg_color = bg_data & 0x03;
+            int bg_priority = (bg_data >> 7) & 1;
+            int priority = (attr >> 7) & 1;
+            int can_draw = 0;
+
+            if (m->cgb_mode) {
+                if (!(lcdc & 0x01)) can_draw = 1; // lcdc 0 - sprites over bg
+                else if (bg_color == 0) can_draw = 1; // bg transparent
+                else if (bg_priority == 0 && priority == 0) can_draw = 1;
+                else if (bg_priority == 0 && priority != 0) can_draw = 0;
+            } else {
+                if (priority == 0 || bg_color == 0) can_draw = 1;
+            }
 			
-			int shade = (palette_reg >> (color_idx * 2)) & 0x03;
-            if (palette_reg_addr == 0xFF48) framebuffer[scanline * 160 + screen_x] = obj0_palette[palette_no][shade];
-            if (palette_reg_addr == 0xFF49) framebuffer[scanline * 160 + screen_x] = obj1_palette[palette_no][shade];
-			
+            if (can_draw) {
+                if (m->cgb_mode) {
+                    int palette_addr = (cgb_palette * 8) + (color_idx * 2); 
+                    uint16_t color16 = ppu->obj_palette[palette_addr] | (ppu->obj_palette[palette_addr + 1] << 8);
+                    framebuffer[ppu->scanline * 160 + screen_x] = gbc_to_rgb(color16);
+                } else {
+                    if (color_idx == 0) continue;
+                    uint8_t shade = (palette_reg >> (color_idx * 2)) & 0x03;
+                    int palette_addr = (obj_palette_idx * 8) + (shade * 2);
+                    uint16_t color =  ppu->obj_palette[palette_addr] | (ppu->obj_palette[palette_addr + 1] << 8);
+                    framebuffer[ppu->scanline * 160 + screen_x] = gbc_to_rgb(color);
+                }
+            }
 		}
 	}
 }
@@ -324,8 +339,8 @@ void ppu_step(PPU* ppu, Memory* m, Status* s, int cycles) {
 				ppu->dot -= 80;
 
 				if (ppu->scanline < 144) {
-					draw_bg(ppu, framebuffer, m, s->palette_no);
-					draw_fg(ppu->scanline, framebuffer, m, s->palette_no);
+					draw_bg(ppu, framebuffer, m);
+					draw_fg(ppu, framebuffer, m);
 				}
 				ppu_mode_set(ppu,m,MODE_VRAM);				
 			} break;

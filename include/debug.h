@@ -4,30 +4,10 @@
 
 #include <stdint.h>
 
-#include "memory.h"
-#include "registers.h"
+typedef struct Memory Memory;
+typedef struct Registers Registers;
 
 #define PRINT_DEBUG	1
-
-typedef enum {
-	// system
-    PALETTE_BW 			= 0x00, // key 1
-    PALETTE_DMG 		= 0x01, // key 3
-	// generic
-    PALETTE_PINK 		= 0x02, // key 4
-    PALETTE_1C 			= 0x03, // blue green bg and pink fg
-    PALETTE_INVERTED	= 0x04, // inverted
-	// games
-	PALETTE_ALLEYWAY	= 0x0D, // alleyway
-    PALETTE_DR_MARIO 	= 0x0A, // dr mario
-    PALETTE_MARIOLAND	= 0x06, // mario land 
-    PALETTE_MARIOLAND2	= 0x07, // mario land 2
-	PALETTE_POKEMONRED  = 0x0C, // pokemon red
-    PALETTE_TETRIS		= 0x05, // tetris (red and yellow)
-    PALETTE_WARIOLAND	= 0x08, // wario land
-    PALETTE_WARIOLAND2	= 0x09, // wario land 2
-	PALETTE_ZELDA		= 0x0B, // zelda links awakening
-} GamePalettes;
 
 typedef struct Status {
 	
@@ -64,8 +44,7 @@ typedef struct Status {
 	int show_cycles;
 	
 	// video
-	int palette_no;
-	int game_palette; // game specific palette if available
+	uint8_t game_id; // game id for specific palette if available
 	int show_vram_viewer;
 	
 	// emulation speed

@@ -102,7 +102,6 @@ void load_game(char* file, uint8_t* eram, uint32_t ram_size) {
     fread(eram, sizeof(uint8_t), ram_size, fp); // read data
     printf("[FILE] Loaded save file: %s (%d bytes)\n", savefile, ram_size);
     fclose(fp);
-    free(savefile);
 
 
 }

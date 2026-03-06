@@ -1,12 +1,15 @@
+// standard libraries
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
-#ifdef _WIN32
+// win32 libraries for reattaching to launch console
+#ifdef _WIN32 
 #include <windows.h>
 #include <stdio.h>
 #endif
 
+// emulator libraries
 #include "audio.h"
 #include "cpu.h"
 #include "debug.h"
@@ -14,6 +17,7 @@
 #include "file.h"
 #include "header.h"
 #include "memory.h"
+#include "palette.h"
 #include "ppu.h"
 #include "registers.h"
 #include "rom.h"
@@ -24,21 +28,28 @@
 #define CPU_HZ 	4194304
 #define FPS		60
 
-void simulate_boot_rom(Registers* reg, Memory* m) {
-	cpu_init(reg);
+void simulate_boot_rom(Registers* reg, Memory* m, uint8_t game_id) {
+	reg->PC = 0x100;
 	mem_boot(m);
+	if (!m->cgb_mode) palette_init(m->ppu, game_id);
 }
 
-char* gb_init(char* file, Registers* reg, Memory* m, Status* s, Audio* audio) {
-	
-	uint32_t boot_rom_enabled = read_boot_ROM("dmg_boot.bin",&m->boot_rom); // read boot rom into boot rom memory
+char* gb_init(char* file, Registers* reg, Memory* m, Status* s, Audio* audio) {	
+
+	m->boot_rom_type = read_boot_ROM(&m->boot_rom); // read boot rom into boot rom memory
 	file = read_rom(file,m,s); // read into memory
 	
+	cpu_init(reg);
 	mem_init(m);
 	status_init(s);
 	audio_init(audio, m);
 	
-	if (!boot_rom_enabled) simulate_boot_rom(reg,m); // simulate boot rom if not found
+	switch (m->boot_rom_type) {
+		case 0: simulate_boot_rom(reg,m, s->game_id); break; // simulate boot rom if not found
+		case 1: palette_init(m->ppu, s->game_id); break; // dmg boot rom
+	}
+	printf("boot rom type %d\n", m->boot_rom_type);
+
 	if (m->ram_size > 0) load_game(file,m->eram,m->ram_size); // attempt to load save file
 
 	return file;
@@ -57,10 +68,12 @@ int main(int argc, char *argv[]) {
 	
 	// create memory structures
 	Registers reg 	= {0}; // cpu registers
-	PPU ppu 		= {0}; // pixel processing unit (gpu)
 	Memory m 		= {0}; // memory
+	PPU ppu 		= {0}; // pixel processing unit (gpu)
 	Status s 		= {0}; // debug emualtor status
 	Audio audio 	= {0}; // audio
+
+	m.ppu = &ppu;
 
 	char* file = 0;
 	if (argc>1) // read rom from arg if possible
@@ -82,11 +95,15 @@ int main(int argc, char *argv[]) {
 	vram_window_init(); // start vram window in background
 	
 	// cpu loop
-	clock_t frame_start = clock();
+	float frame_start = clock();
 	clock_t second_count = clock();
 	if (PRINT_DEBUG) printf("[MAIN] cpu cycle start\n");
+
+	uint64_t opcodes[256] = {0};
 	
 	while(s.running){ // main loop
+
+		//opcodes[read8(&m, reg.PC)]++;
 		
 		// cpu cycles
 		int c = cpu_step(&m,&reg);
@@ -135,12 +152,12 @@ int main(int argc, char *argv[]) {
 			if (s.restart_triggered) {
 				s.restart_triggered = 0;
 				if (m.ram_size > 0) save_game(file, m.eram, m.ram_size); // save before resetting	
-				gb_init(file, &reg, &m, &s, &audio);
+				file = gb_init(file, &reg, &m, &s, &audio);
 			}
 			if (s.new_game) {
 				s.new_game = 0;
 				if (m.ram_size > 0) save_game(file, m.eram, m.ram_size); // save before new game
-				gb_init(0, &reg, &m, &s, &audio);
+				file = gb_init(0, &reg, &m, &s, &audio);
 			}
 
 			// debug
@@ -150,27 +167,30 @@ int main(int argc, char *argv[]) {
 			if (s.advance_frame) {s.paused=2;s.advance_frame=0;} // frame stepping
 
 			// === ADD ADDITIONAL PER-FRAME DEBUG CODE HERE ===
-
+			
 			// =====================================
 			
 			if (!s.fast_forward) { // skip frame delay if in fast forward
 				while (((double)(clock() - frame_start) / CLOCKS_PER_SEC) < (1.0 / 60.0)) {
 					// do nothing until frame time has passed
 				}
+				frame_start += (float)CLOCKS_PER_SEC / 60;
+			} else {
+				frame_start = clock();
 			}
 			// reset frame cycle counter
 			s.frame_tracker = 0;
-			frame_start = clock();
 		}
 
 		// check if 1 second has passed
-		if (s.second_tracker > CPU_HZ){ // code to run per emulated second
+		if (s.second_tracker > (CPU_HZ)){ // code to run per emulated second
 
-			uint64_t ticks = clock() - second_count;
+			uint64_t new_clock = clock();
+			uint64_t ticks = new_clock - second_count;
 			double ms = (double)ticks * 1000.0 / CLOCKS_PER_SEC;
 			double percentage = (1000.0 / ms) * 100.0;
 			double fps = 60 * (1000.0 / ms);
-			second_count = clock();
+			second_count = new_clock;
 			s.total_seconds++;
 
 			if (PRINT_DEBUG)
@@ -183,6 +203,13 @@ int main(int argc, char *argv[]) {
 
 	// if game has external ram, save it to save file
 	if (m.ram_size > 0) save_game(file, m.eram, m.ram_size);
+
+	for (int row = 0;row<16;row++){
+		for (int column = 0;column<16;column++){
+			printf("%d ",opcodes[row*16 + column]);
+		}
+		printf("\n");
+	}
 	
 	window_destroy();
 	vram_window_destroy();

@@ -1,6 +1,8 @@
-#include "audio.h"
 #include <SDL2/SDL.h>
 #include <stdio.h>
+
+#include "audio.h"
+#include "memory.h"
 
 // controls the waveform. per cycle - 1 is low 0 is high
 static const int duty_table[4][8] = { 
@@ -249,7 +251,6 @@ int get_sample(Channel* ch, Memory* m, int cycles) {
 }
 
 void detect_trigger(Channel* ch, Memory* m) {
-
     uint8_t nrx4 = read8(m, ch->nrx4);
     if (read8(m, ch->nrx4) & 0x80) { // bit 7 of NRx4 triggers the channel
         

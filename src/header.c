@@ -18,6 +18,7 @@ Header read_header(Memory* m){
                       (uint16_t)m->rom[0x0145];
 
     // Single-byte fields
+    h.CGBMode       = m->rom[0x0143];
     h.SGBFeatures   = m->rom[0x0146];
     h.CartridgeType = m->rom[0x0147];
     h.ROMSize       = m->rom[0x0148];
@@ -29,12 +30,17 @@ Header read_header(Memory* m){
 }
 
 void print_header(Header h){
-    printf("ROM Name:               %s\n",h.ROMName);
-    printf("New Licensee:           %d\n",h.NewLicensee);
-    printf("SuperGameBoy Features:  %d\n",h.SGBFeatures);
-    printf("Cartridge Type:         %d\n",h.CartridgeType);
-    printf("ROM Size:               %d\n",h.ROMSize);
-    printf("RAM Size:               %d\n",h.RAMSize);
-    printf("Country Code:           %d\n",h.CountryCode);
-    printf("Licensee:               %d\n",h.Licensee);
+    printf("+-------------------------+------------------+\n");
+    printf("| Property                | Value            |\n");
+    printf("+-------------------------+------------------+\n");
+    printf("| ROM Name:               | %-16s |\n",h.ROMName);
+    printf("| New Licensee:           | %-16d |\n",h.NewLicensee);
+    printf("| GameBoy Color Support:  | %-16x |\n",h.CGBMode);
+    printf("| SuperGameBoy Features:  | %-16d |\n",h.SGBFeatures);
+    printf("| Cartridge Type:         | %-16d |\n",h.CartridgeType);
+    printf("| ROM Size:               | %-16d |\n",h.ROMSize);
+    printf("| RAM Size:               | %-16d |\n",h.RAMSize);
+    printf("| Country Code:           | %-16d |\n",h.CountryCode);
+    printf("| Licensee:               | %-16d |\n",h.Licensee);    
+    printf("+-------------------------+------------------+\n");
 }

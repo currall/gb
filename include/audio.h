@@ -2,7 +2,8 @@
 #define AUDIO_H
 
 #include <stdint.h>
-#include "memory.h"
+
+typedef struct Memory Memory;
 
 typedef enum {
     // channel 1 (square) registers

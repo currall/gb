@@ -6,6 +6,7 @@
 
 #include "header.h"
 #include "memory.h"
+#include "ppu.h"
 #include "rom.h"
 
 uint8_t get_mbc_type(uint8_t cartridge_type) {
@@ -60,6 +61,26 @@ void mem_boot(Memory* m) {
     m->io[0x25] = 0xF3; // nr51
     m->io[0x26] = 0xF1; // nr52
 
+    // --- CGB ---
+    m->io[0x4D] = 0x7E;
+    
+    // --- Boot ROM ---
+    m->boot_rom_enabled = 0;
+}
+
+void mem_init(Memory* m) {
+
+    // --- CGB ---
+
+    m->cgb_speed = 1;
+    m->vram_bank = 0;
+    m->wram_bank = 1;
+
+    // --- Joypad --- (needs initialising even if boot rom is present)
+    m->io[0x00] = 0xCF;
+    m->j.dpad = 0x0F;
+    m->j.buttons = 0x0F;
+    
     // --- PPU ---
     m->io[0x40] = 0x91; // LCDC
     m->io[0x41] = 0x85; // STAT
@@ -71,18 +92,7 @@ void mem_boot(Memory* m) {
     m->io[0x48] = 0xFF; // OBP0
     m->io[0x49] = 0xFF; // OBP1
     m->io[0x4A] = 0x00; // WY
-    m->io[0x4B] = 0x00; // WX
-    
-    // --- Boot ROM ---
-    m->boot_rom_enabled = 0;
-}
-
-void mem_init(Memory* m) {
-
-    // --- Joypad --- (needs initialising even if boot rom is present)
-    m->io[0x00] = 0xCF;
-    m->j.dpad = 0x0F;
-    m->j.buttons = 0x0F;
+    m->io[0x4B] = 0x00; // WX 
     
     // -- MBC ---
     m->mbc_type = get_mbc_type(m->cartridge_type);
@@ -296,6 +306,14 @@ int dma_blocks(Memory* m, uint16_t addr) {
 
 // === MAIN MEMORY READ AND WRITE ===
 
+// === WRITE ===
+
+void write_vram(Memory* m, uint16_t addr, uint8_t value, int bank){
+    if (!(addr >= 0x8000 && addr <= 0x9FFF)) return;
+    if (!(bank == 0 || !bank == 1)) bank = m->vram_bank;
+    m->vram[bank][addr - 0x8000] = value;
+}
+
 void raw_write(Memory* m, uint16_t addr, uint8_t value) {
 
     // mbc
@@ -316,10 +334,18 @@ void raw_write(Memory* m, uint16_t addr, uint8_t value) {
         if (addr >= 0xA000 && addr <= 0xBFFF) mbc5_write(m,addr,value); // external ram
     } 
 
+    // vram
+    if (addr >= 0x8000 && addr <= 0x9FFF) write_vram(m, addr, value, -1);
+
+    // wram
+    if (addr >= 0xC000 && addr <= 0xCFFF) m->wram[0][addr - 0xC000] = value;
+    if (addr >= 0xD000 && addr <= 0xDFFF) m->wram[m->wram_bank][addr - 0xD000] = value;
+
+    // echo ram
+    if (addr >= 0xE000 && addr <= 0xEFFF) m->wram[0][addr - 0xE000] = value;
+    if (addr >= 0xF000 && addr <= 0xFDFF) m->wram[m->wram_bank][addr - 0xF000] = value;
+
     // normal memory
-    if (addr >= 0x8000 && addr <= 0x9FFF) m->vram[addr - 0x8000] = value;
-    if (addr >= 0xC000 && addr <= 0xDFFF) m->wram[addr - 0xC000] = value;
-    if (addr >= 0xE000 && addr <= 0xFDFF) m->wram[addr - 0xE000] = value; // echo ram
     if (addr >= 0xFE00 && addr <= 0xFE9F) m->oam[addr - 0xFE00] = value;
     if (addr >= 0xFF00 && addr <= 0xFF7F) m->io[addr - 0xFF00] = value;
     if (addr >= 0xFF80 && addr <= 0xFFFE) m->hram[addr - 0xFF80] = value;
@@ -327,6 +353,9 @@ void raw_write(Memory* m, uint16_t addr, uint8_t value) {
 }
 
 void write8(Memory* m, uint16_t addr, uint8_t value) {
+
+    if (addr >= 0xFF00 && addr <= 0xFF7F)
+        m->io[addr - 0xFF00] = value; // always store io
 
     if (addr == 0xFF00) { // input
         raw_write(m,0xFF00, (raw_read(m,0xFF00) & 0xCF) | (value & 0x30) );
@@ -359,14 +388,68 @@ void write8(Memory* m, uint16_t addr, uint8_t value) {
 		m->dma_pending = 1;
 		m->dma_source = value << 8;
 	}	
+
+    if (addr == 0xFF4F) {
+        m->vram_bank = value & 0x01; // CGB vram bank no
+    }
 	
     if (addr == 0xFF50 && value != 0 && m->boot_rom_enabled) {
         m->boot_rom_enabled = 0;
-		printf("[MEMORY] Boot ROM disabled!\n");
-    }
-	if (dma_blocks(m, addr)) {
+        printf("[MEMORY] Boot ROM disabled!\n");
         return;
     }
+
+    if (addr == 0xFF55) {
+        uint16_t src = (m->io[0x51] << 8) | (m->io[0x52] & 0xF0);
+        uint16_t dst = ((m->io[0x53] & 0x1F) << 8) | (m->io[0x54] & 0xF0);
+        dst |= 0x8000; // dst is in vram
+
+        uint16_t length = ((value & 0x7F) + 1) * 16;
+        int mode = value >> 7;
+
+        if (mode == 0) {
+            // dma
+            for (int i = 0; i < length; i++) {
+                m->vram[m->vram_bank][(dst + i) - 0x8000] = raw_read(m, src + i);
+            }
+            m->io[0x55] = 0xFF; // transfer complete
+        }
+    }
+
+    if (addr == 0xFF69) {
+        uint8_t index = m->io[0x68] & 0x3F;
+
+        ((uint8_t*)m->ppu->bg_palette)[index] = value;
+
+        if (m->io[0x68] & 0x80) {
+            index = (index + 1) & 0x3F;
+            m->io[0x68] = (m->io[0x68] & 0x80) | index;
+        }
+        return;
+    }
+    if (addr == 0xFF6B) {
+        uint8_t index = m->io[0x6A] & 0x3F;
+
+        ((uint8_t*)m->ppu->obj_palette)[index] = value;
+
+        if (m->io[0x6A] & 0x80) {
+            index = (index + 1) & 0x3F;
+            m->io[0x6A] = (m->io[0x6A] & 0x80) | index;
+        }
+        return;
+    }
+
+    if (addr == 0xFF70) { // CGB wram bank no
+        m->wram_bank = value & 0x07;
+        if (m->wram_bank == 0) m->wram_bank = 1;
+    }
+
+    // --- DMA ---
+    if (dma_blocks(m, addr)) {
+        return;
+    }
+
+    // === raw write === 
     raw_write(m,addr,value);
 }
 
@@ -375,7 +458,13 @@ void write16(Memory* m, uint16_t addr, uint16_t value) {
     write8(m, addr+1, (uint8_t)((value & 0xFF00) >> 8));
 }
 
+// === READ ===
 
+uint8_t read_vram(Memory* m, uint16_t addr, int bank){
+    if (!(addr >= 0x8000 && addr <= 0x9FFF)) return 0;
+    if (!(bank == 0 || bank == 1)) bank = m->vram_bank;
+    return m->vram[bank][addr - 0x8000];
+}
 
 uint8_t raw_read(Memory *m, uint16_t addr) {
 
@@ -384,8 +473,14 @@ uint8_t raw_read(Memory *m, uint16_t addr) {
         addr -= 0x2000;
         
     // boot rom
-    if (m->boot_rom_enabled && addr < 0x0100) {
-        return m->boot_rom[addr];
+    if (m->boot_rom_enabled) {
+        if (addr < 0x0100) { // dmg boot rom mode
+            return m->boot_rom[addr];
+        }
+        
+        if (m->boot_rom_type == 2 && addr >= 0x0200 && addr < 0x0900) { // extra space for cgb boot roms
+            return m->boot_rom[addr]; 
+        }
     }
 
     // mbc
@@ -409,12 +504,20 @@ uint8_t raw_read(Memory *m, uint16_t addr) {
         if (addr < 0x8000) return m->rom[addr];
         if (addr >= 0xA000 && addr <= 0xBFFF) return 0xFF;
     }
+    
+    // vram
+    if (addr >= 0x8000 && addr <= 0x9FFF) return m->vram[m->vram_bank][addr - 0x8000];
+
+    // wram
+    if (addr >= 0xC000 && addr <= 0xCFFF) return m->wram[0][addr - 0xC000];
+    if (addr >= 0xD000 && addr <= 0xDFFF) return m->wram[m->wram_bank][addr - 0xD000];
+
+    // echo ram
+    if (addr >= 0xE000 && addr <= 0xEFFF) return m->wram[0][addr - 0xE000];
+    if (addr >= 0xF000 && addr <= 0xFDFF) return m->wram[m->wram_bank][addr - 0xF000];
 
     // regular memory
 
-    if (addr >= 0x8000 && addr <= 0x9FFF) return m->vram[addr - 0x8000];
-    if (addr >= 0xC000 && addr <= 0xDFFF) return m->wram[addr - 0xC000];
-    if (addr >= 0xE000 && addr <= 0xFDFF) return m->wram[addr - 0xE000]; // echo ram
     if (addr >= 0xFE00 && addr <= 0xFE9F) return m->oam[addr - 0xFE00];
     if (addr >= 0xFF00 && addr <= 0xFF7F) return m->io[addr - 0xFF00];
     if (addr >= 0xFF80 && addr <= 0xFFFE) return m->hram[addr - 0xFF80];
@@ -425,8 +528,22 @@ uint8_t raw_read(Memory *m, uint16_t addr) {
 
 uint8_t read8(Memory* m, uint16_t addr) {
 	
-	// read rules
+	// === read rules ===
+
 	//if (addr == 0xFF00) return 0xCF; // block input
+    if (addr == 0xFF00) { // input
+        uint8_t select = raw_read(m,0xFF00) & 0x30;
+        uint8_t result = select | 0xC0 | 0x0F;
+
+        if (!(select & 0x10))
+            result &= (0xF0 | m->j.dpad);
+
+        if (!(select & 0x20))
+            result &= (0xF0 | m->j.buttons);
+
+        return result;
+    }
+
     if (addr == 0xFF01) return 0xFF;
 	if (addr == 0xFF04) return m->div_counter >> 8; // div counter
 	if (addr == 0xFF07) return raw_read(m,0xFF07) | 0xF8; // timer
@@ -443,24 +560,15 @@ uint8_t read8(Memory* m, uint16_t addr) {
 		if (!(raw_read(m,0xFF40) & 0x80))
 			return 0;
 	}
-	if (addr >= 0xFF4C && addr <= 0xFF7F) return 0xFF; // cgb only - blank for dmg
-
-    if (addr == 0xFF00) { // input
-        uint8_t select = raw_read(m,0xFF00) & 0x30;
-        uint8_t result = select | 0xC0 | 0x0F;
-
-        if (!(select & 0x10))
-            result &= (0xF0 | m->j.dpad);
-
-        if (!(select & 0x20))
-            result &= (0xF0 | m->j.buttons);
-
-        return result;
-    }
-
+    if (addr == 0xFF4F) return m->vram_bank | 0xFE;
+    if (addr == 0xFF70) return m->wram_bank | 0xF8;
+    
+    // --- dma ---
 	if (dma_blocks(m, addr)) {
         return 0xFF;
     }
+
+    // === raw read ===
     return raw_read(m, addr);
 	
 }

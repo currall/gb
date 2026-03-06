@@ -2,10 +2,9 @@
 #ifndef CPU_H
 #define CPU_H
 
-#include "debug.h"
-#include "memory.h"
-#include "registers.h"
-#include "rom.h"
+typedef struct Memory Memory;
+typedef struct Registers Registers;
+typedef struct Status Status;
 
 void set_flag(int flag, Registers* reg, int enabled);
 int get_flag(int flag, Registers* reg);

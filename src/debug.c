@@ -45,65 +45,64 @@ void status_init(Status* s) {
 	s->show_cycles = 		1;
 
 	// --- video ---
-	s->palette_no = s->game_palette;
 	s->show_vram_viewer = 0;
 	
 }
 
 void print_table_header(Status* s) {
 	
-	char line1[256] = "==";
+	char line1[256] = "+-";
 	char line2[256] = "| ";
 	char line3[256] = "| ";
-	char line4[256] = "==";
+	char line4[256] = "+-";
 	
 	if (s->show_instruction) {
-		strcat(line1, "==================");
+		strcat(line1, "----------------+-");
 		strcat(line2, "instruction     | ");
 		strcat(line3, "[no:opcode]     | ");
-		strcat(line4, "================|=");
+		strcat(line4, "----------------+-");
 	}
 	if (s->show_operands) {
-		strcat(line1, "================");
+		strcat(line1, "-----+--------+-");
 		strcat(line2, "8bit | 16 bit | ");
 		strcat(line3, "opnd | oprand | ");
-		strcat(line4, "==============|=");
+		strcat(line4, "-----+--------+-");
 	}
 	if (s->show_cpu) {
-		strcat(line1, "========================");
+		strcat(line1, "----------+-----------+-");
 		strcat(line2, "PC        | SP        | ");
 		strcat(line3, "ProgCount | StackPntr | ");
-		strcat(line4, "==========|===========|=");
+		strcat(line4, "----------+-----------+-");
 	}
 	if (s->show_ime) {
-		strcat(line1, "==========================================");
+		strcat(line1, "----------------+-----------------------+-");
 		strcat(line2, "Interrupts      | Interrupt Registers   | ");
 		strcat(line3, "IME | IME_delay | IF:0xFF0F | IE:0xFFFF | ");
-		strcat(line4, "====|===========|===========|===========|=");
+		strcat(line4, "----+-----------+-----------+-----------+-");
 	}
 	if (s->show_registers) {
-		strcat(line1, "================================================");
+		strcat(line1, "----------------------------------------------+-");
 		strcat(line2, "Register Values                               | ");
 		strcat(line3, "AF        | BC        | DE        | HL        | ");
-		strcat(line4, "==========|===========|===========|===========|=");
+		strcat(line4, "----------+-----------+-----------+-----------+-");
 	}
 	if (s->show_ppu) {
-		strcat(line1, "=========================================");
+		strcat(line1, "---------------------------------------+-");
 		strcat(line2, "Register Values                        | ");
 		strcat(line3, "LCDC        | STAT        | BGP:0xFF47 | ");
-		strcat(line4, "============|=============|============|=");
+		strcat(line4, "------------+-------------+------------+-");
 	}
 	if (s->show_mbc) {
-		strcat(line1, "==========");
+		strcat(line1, "--------+-");
 		strcat(line2, "MBC1    | ");
 		strcat(line3, "bank no | ");
-		strcat(line4, "========|=");
+		strcat(line4, "--------+-");
 	}
 	if (s->show_cycles) {
-		strcat(line1, "================");
+		strcat(line1, "--------------+-");
 		strcat(line2, "total         | ");
 		strcat(line3, "cycles passed | ");
-		strcat(line4, "==============|=");
+		strcat(line4, "--------------+-");
 	}
 	
 	printf("%s\n", line1);

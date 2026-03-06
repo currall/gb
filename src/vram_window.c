@@ -27,7 +27,7 @@ void draw_vram(Memory* m, uint32_t* framebuffer) {
         int tile_x = (tile % TILES_PER_ROW) * TILE_SIZE;
         int tile_y = (tile / TILES_PER_ROW) * TILE_SIZE;
 
-        uint8_t* tile_data = m->vram + tile * 16;
+        uint8_t* tile_data = m->vram[0] + tile * 16;
 
         for (int y = 0; y < 8; y++) {
             uint8_t lo = tile_data[y * 2 + 0];

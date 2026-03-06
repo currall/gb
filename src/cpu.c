@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 #include "cb.h"
@@ -330,7 +331,21 @@ void rrca(Registers* reg) {
 // --- 0x1x --- 
 
 // 0x10
-void stop(Registers* reg) {;}
+void stop(Registers* reg, Memory* m) {
+	if (m->cgb_mode) {
+        uint8_t speed_reg = read8(m, 0xFF4D);
+        if (speed_reg & 0x01) {
+            if (m->cgb_speed == 1) {
+                m->cgb_speed = 2;
+                write8(m, 0xFF4D, 0x80); 
+            } else {
+                m->cgb_speed = 1;
+                write8(m, 0xFF4D, 0x00);
+            }
+			printf("[CGB] cgb speed mode changed = %d\n",m->cgb_speed);
+        }
+    }
+}
 // 0x11
 void ld_de_xx(Registers* reg, uint16_t operand) {reg->DE = operand;}
 // 0x12
@@ -1056,12 +1071,12 @@ void cp_x(Registers* reg, uint8_t operand) {cpu_cp(reg,operand);}
 void rst_38(Registers* reg, Memory* m) { rst(reg, m, 0x38); reg->pc_changed = 1;}
 
 void cpu_init(Registers* reg) {
-	
+
 	reg->BC = 0x0013;
 	reg->DE = 0x00D8;
 	reg->HL = 0x014D;
-	reg->AF = 0x01B0;
-	reg->PC = 0x0100;
+	reg->AF = 0x11B0;
+	reg->PC = 0x0000;
 	reg->SP = 0xFFFE; // stack starts at top of memory
 	
 	reg->IME = 0;
@@ -1172,7 +1187,7 @@ int cpu_step(Memory* m, Registers* reg){
 		case (0x0E):ld_c_x(reg, operand_x); break; // 0x0E
 		case (0x0F):rrca(reg); break; // 0x0F
 		
-		case (0x10):stop(reg); break; // 0x10
+		case (0x10):stop(reg,m); break; // 0x10
 		case (0x11):ld_de_xx(reg, operand_xx); break; // 0x11
 		case (0x12):ld_dep_a(reg, m); break; // 0x12
 		case (0x13):inc_de(reg); break; // 0x13
@@ -1447,6 +1462,7 @@ int cpu_step(Memory* m, Registers* reg){
 			reg->IME = 1;
 	}
 
+	if (m->cgb_speed == 2) cycles *= 0.5;
 	
 	return cycles;
 }

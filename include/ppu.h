@@ -3,8 +3,9 @@
 #define PPU_H
 
 #include <stdint.h>
-#include "debug.h"
-#include "memory.h"
+
+typedef struct Memory Memory;
+typedef struct Status Status;
 
 #define MODE_HBLANK 0
 #define MODE_VBLANK 1
@@ -23,12 +24,23 @@
 #define WY   0xFF4A
 #define WX   0xFF4B
 
-typedef struct {
+// gbc registers
+#define VRAM_BANK 0xFF4F
+#define BCPS 0xFF68 // bg plette idx
+#define BCPD 0xFF69 // bg palette data
+#define OCPS 0xFF6A // obj palette idx
+#define OCPD 0xFF6B // obj palette data
+
+typedef struct PPU {
     int mode;		
     int scanline;	// number of scanlines
     int dot;		// cycles in current scanline
 	int frame_ready; // is there a frame ready in the frame buffer?
     uint8_t window_line; // line of window texture
+
+    // --- cgb ---
+    uint8_t bg_palette[64];
+    uint8_t obj_palette[64];
 } PPU;
 
 void ppu_init(PPU* ppu, Memory* m);

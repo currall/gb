@@ -176,7 +176,10 @@ int main(int argc, char *argv[]) {
 				frame_start = clock();
 			}
 			
-			if (frame_start - (clock() - 10)) {
+			// sync 60fps timer to live time if it falls behind
+				// due to pause, loading new game, lag, etc.
+			if (frame_start < (clock() - 10)) {
+				//printf("[TIME] Sync!! frame timer: %f, clock: %d\n",frame_start,clock());
 				frame_start = clock();
 			}
 

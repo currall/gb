@@ -99,11 +99,8 @@ int main(int argc, char *argv[]) {
 	clock_t second_count = clock();
 	if (PRINT_DEBUG) printf("[MAIN] cpu cycle start\n");
 
-	uint64_t opcodes[256] = {0};
 	
 	while(s.running){ // main loop
-
-		//opcodes[read8(&m, reg.PC)]++;
 		
 		// cpu cycles
 		int c = cpu_step(&m,&reg);
@@ -153,11 +150,13 @@ int main(int argc, char *argv[]) {
 				s.restart_triggered = 0;
 				if (m.ram_size > 0) save_game(file, m.eram, m.ram_size); // save before resetting	
 				file = gb_init(file, &reg, &m, &s, &audio);
+				frame_start = clock(); // reset frame timer
 			}
 			if (s.new_game) {
 				s.new_game = 0;
 				if (m.ram_size > 0) save_game(file, m.eram, m.ram_size); // save before new game
 				file = gb_init(0, &reg, &m, &s, &audio);
+				frame_start = clock(); // reset frame timer
 			}
 
 			// debug
@@ -203,13 +202,6 @@ int main(int argc, char *argv[]) {
 
 	// if game has external ram, save it to save file
 	if (m.ram_size > 0) save_game(file, m.eram, m.ram_size);
-
-	for (int row = 0;row<16;row++){
-		for (int column = 0;column<16;column++){
-			printf("%d ",opcodes[row*16 + column]);
-		}
-		printf("\n");
-	}
 	
 	window_destroy();
 	vram_window_destroy();

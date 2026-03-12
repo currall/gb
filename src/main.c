@@ -150,13 +150,11 @@ int main(int argc, char *argv[]) {
 				s.restart_triggered = 0;
 				if (m.ram_size > 0) save_game(file, m.eram, m.ram_size); // save before resetting	
 				file = gb_init(file, &reg, &m, &s, &audio);
-				frame_start = clock(); // reset frame timer
 			}
 			if (s.new_game) {
 				s.new_game = 0;
 				if (m.ram_size > 0) save_game(file, m.eram, m.ram_size); // save before new game
 				file = gb_init(0, &reg, &m, &s, &audio);
-				frame_start = clock(); // reset frame timer
 			}
 
 			// debug
@@ -177,6 +175,11 @@ int main(int argc, char *argv[]) {
 			} else {
 				frame_start = clock();
 			}
+			
+			if (frame_start - (clock() - 10)) {
+				frame_start = clock();
+			}
+
 			// reset frame cycle counter
 			s.frame_tracker = 0;
 		}

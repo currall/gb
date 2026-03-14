@@ -68,6 +68,7 @@ int window_init(char* file) {
         GB_HEIGHT
     );
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
+	ui_init();
 	
 	window_id = SDL_GetWindowID(window);
 	SDL_RaiseWindow(window);
@@ -111,6 +112,7 @@ void get_window_size(SDL_Rect* output)
 
 void window_update(uint32_t* framebuffer){
     SDL_UpdateTexture(texture, NULL, framebuffer, GB_WIDTH * sizeof(uint32_t));
+    SDL_UpdateTexture(ui_texture, NULL, ui_get_framebuffer(), GB_WIDTH * sizeof(uint32_t));
 
 	// scale output to window
     SDL_Rect output;
@@ -118,19 +120,9 @@ void window_update(uint32_t* framebuffer){
 
     SDL_RenderClear(renderer); 
     SDL_RenderCopy(renderer, texture, NULL, &output);
-    SDL_RenderPresent(renderer);
-}
-void ui_window_update(uint32_t* ui_framebuffer){
-    SDL_UpdateTexture(ui_texture, NULL, ui_framebuffer, GB_WIDTH * sizeof(uint32_t));
-
-	// scale output to window
-    SDL_Rect output;
-    get_window_size(&output);
-
-    SDL_RenderClear(renderer); 
-    SDL_RenderCopy(renderer, texture, NULL, &output);   // redraw game
     SDL_RenderCopy(renderer, ui_texture, NULL, &output); // overlay ui
-    SDL_RenderPresent(renderer);
+
+    SDL_RenderPresent(renderer); // draw
 }
 
 void joypad_set_button(Memory* m, uint8_t mask, int pressed, int is_button_group)

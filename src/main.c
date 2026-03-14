@@ -22,6 +22,7 @@
 #include "registers.h"
 #include "rom.h"
 #include "timer.h"
+#include "ui.h"
 #include "vram_window.h"
 #include "window.h"
 
@@ -122,8 +123,8 @@ int main(int argc, char *argv[]) {
 				print_table_header(&s);
 			}
 			print_cycle(&reg,&m,&s);
-			window_update(ppu_get_framebuffer(&ppu));
 			while(s.paused) {
+				window_update(ppu.framebuffer);
 				check_events(&s,&m);
 				if (s.print_memory) {print_memory(&m); s.print_memory=0;};
 				if (s.show_vram_viewer) vram_window_update(&m); else vram_window_hide(); // vram window
@@ -135,6 +136,8 @@ int main(int argc, char *argv[]) {
 		// end timer
 		
 		if (s.frame_tracker > (CPU_HZ / 60)) { // code to run per-frame
+
+			// draw safe framebuffer to screen
 			window_update(ppu.framebuffer);
 
 			// input
@@ -197,6 +200,7 @@ int main(int argc, char *argv[]) {
 				printf("[TIME] %d seconds passed [took %.0fms: %.2f%%] [FPS: %.2f]\n",
 					s.total_seconds, ms, percentage, fps);
 			
+			s.fps = fps;
 			s.second_tracker = 0;
 		}
 	}

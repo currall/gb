@@ -14,6 +14,7 @@ typedef struct Status {
 	// emulator status
 	int running;
 	int paused;
+	int fps;
 
 	int restart_triggered;
 	int new_game;

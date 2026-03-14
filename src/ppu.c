@@ -274,7 +274,7 @@ void draw_fg(PPU* ppu, uint32_t* framebuffer, Memory* m) {
 
 void frame_ready(PPU* ppu){
     for (int i = 0; i < (160*144); i++) {
-        ppu->framebuffer[i] = framebuffer[i];
+        ppu->framebuffer[i] = framebuffer[i]; // stores safe framebuffer
     }
 }
 

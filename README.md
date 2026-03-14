@@ -33,24 +33,28 @@ Emulator supports using a Nintendo Game Boy / Game Boy Color boot ROM in the exe
 | A | Z | . |
 | B | X | , |
 
-| Hotkey | Function |
-| - | - |
+| Hotkey | Modifier | Function |
+| - | - | - |
 | *Game Management* |
-| **O** | Open new ROM |
-| **R** | Restart Game |
+| **O** | Ctrl | Open new ROM |
+| **R** | Ctrl | Restart Game |
 | *Debug Logging*|
-| **L** | Enable per-frame debug output log |
-| **Shift + L** | Enable per-cycle debug output log |
-| **M** | Print memory to output log |
-| **Hold Right Shift** | Print per-cycle output log while holding |
+| **L** | Ctrl | Enable per-frame debug output log |
+| **L** | Ctrl + Shift| Enable per-cycle debug output log |
+| **M** | Ctrl | Print memory to output log |
 | *Speed* |
-| **F** | Fast-Forward (disables wait between each frame) |
-| **N** | Run until next frame |
-| **Shift + N** | Run until next instruction |
-| **P** | Pause |
+| **F** | Ctrl | Fast-Forward (disables wait between each frame) |
+| **N** | Ctrl | Run until next frame |
+| **N** | Ctrl + Shift | Run until next instruction |
+| **P** | Ctrl | Pause |
 | *Video* |
-| **V** | Toggle VRAM Display Window |
-| **0-9** | Select color palette |
+| **F11** | | Toggle Fullscreen |
+| **Enter** | Alt | Toggle Fullscreen |
+| **V** | Ctrl | Toggle VRAM Display Window |
+| **0-9** | Ctrl | Change Window Size |
+| **0-9** | Alt | Select color palette |
+
+#### Palettess
 
 | Hotkey | Palette |
 | - | - |

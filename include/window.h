@@ -23,8 +23,9 @@ typedef struct Status Status;
 
 int  window_init(char* file);
 void window_update(uint32_t* framebuffer);
+void ui_window_update(uint32_t* ui_framebuffer);
+
 void check_events(Status* s, Memory* m);
 void window_destroy(void);
-void pause_framebuffer(uint32_t* framebuffer);
 
 #endif

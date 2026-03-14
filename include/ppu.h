@@ -32,10 +32,12 @@ typedef struct Status Status;
 #define OCPD 0xFF6B // obj palette data
 
 typedef struct PPU {
+
+    uint32_t framebuffer[160*144]; // safe framebuffer to draw to screen
+
     int mode;		
     int scanline;	// number of scanlines
     int dot;		// cycles in current scanline
-	int frame_ready; // is there a frame ready in the frame buffer?
     uint8_t window_line; // line of window texture
 
     // --- cgb ---

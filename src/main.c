@@ -114,11 +114,6 @@ int main(int argc, char *argv[]) {
 		ppu_step(&ppu,&m, &s, c);
 		timer_step(&m, c);
 		audio_step(&audio, &m, c);
-
-		if (ppu_frame_ready(&ppu)) {
-			window_update(ppu_get_framebuffer(&ppu));
-			ppu.frame_ready = 0;
-		}
 		
 		// pause
 		if (s.paused > 0) {
@@ -127,7 +122,6 @@ int main(int argc, char *argv[]) {
 				print_table_header(&s);
 			}
 			print_cycle(&reg,&m,&s);
-			pause_framebuffer(ppu_get_framebuffer(&ppu));
 			window_update(ppu_get_framebuffer(&ppu));
 			while(s.paused) {
 				check_events(&s,&m);
@@ -141,6 +135,7 @@ int main(int argc, char *argv[]) {
 		// end timer
 		
 		if (s.frame_tracker > (CPU_HZ / 60)) { // code to run per-frame
+			window_update(ppu.framebuffer);
 
 			// input
 			check_events(&s,&m);

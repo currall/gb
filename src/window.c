@@ -5,10 +5,12 @@
 #include "memory.h"
 #include "palette.h"
 #include "window.h"
+#include "ui.h"
 
 static SDL_Window*   window   = NULL;
 static SDL_Renderer* renderer = NULL;
 static SDL_Texture*  texture  = NULL;
+static SDL_Texture*  ui_texture=NULL;
 uint32_t window_id = 0;
 
 void controller_init(){
@@ -26,6 +28,19 @@ void controller_init(){
 	}
 }
 
+void ui_init() {
+	ui_texture  = SDL_CreateTexture(
+        renderer,
+        SDL_PIXELFORMAT_ARGB8888,
+        SDL_TEXTUREACCESS_STREAMING,
+        GB_WIDTH,
+        GB_HEIGHT
+    );
+	SDL_SetTextureBlendMode(ui_texture, SDL_BLENDMODE_BLEND);
+
+	clear_ui_framebuffer();
+}
+
 int window_init(char* file) {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) != 0)
         return 0;
@@ -39,7 +54,7 @@ int window_init(char* file) {
         SDL_WINDOWPOS_CENTERED,
         GB_WIDTH * 4,
         GB_HEIGHT * 4,
-        SDL_WINDOW_SHOWN
+        SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE
     );
 
     if (!window) return 0;
@@ -52,6 +67,7 @@ int window_init(char* file) {
         GB_WIDTH,
         GB_HEIGHT
     );
+	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
 	
 	window_id = SDL_GetWindowID(window);
 	SDL_RaiseWindow(window);
@@ -62,10 +78,58 @@ int window_init(char* file) {
     return renderer && texture;
 }
 
-void window_update(uint32_t* framebuffer) {
+void toggle_fullscreen(Status* s) {
+    s->fullscreen = !s->fullscreen;
+
+    if (s->fullscreen)
+        SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+    else
+        SDL_SetWindowFullscreen(window, 0);
+}
+void set_window_size(int scale) {SDL_SetWindowSize(window, GB_WIDTH * scale, GB_HEIGHT * scale);}
+
+void get_window_size(SDL_Rect* output)
+{
+    int window_w, window_h;
+    SDL_GetRendererOutputSize(renderer, &window_w, &window_h); // gets window size
+
+    float target_aspect = (float)GB_WIDTH / (float)GB_HEIGHT;
+    float window_aspect = (float)window_w / (float)window_h;
+
+    if (window_aspect > target_aspect) { // window too wide
+        output->h = window_h;
+        output->w = (int)(window_h * target_aspect);
+        output->x = (window_w - output->w) / 2;
+        output->y = 0;
+    } else { // window too tall
+        output->w = window_w;
+        output->h = (int)(window_w / target_aspect);
+        output->x = 0;
+        output->y = (window_h - output->h) / 2;
+    }
+}
+
+void window_update(uint32_t* framebuffer){
     SDL_UpdateTexture(texture, NULL, framebuffer, GB_WIDTH * sizeof(uint32_t));
-    SDL_RenderClear(renderer);
-    SDL_RenderCopy(renderer, texture, NULL, NULL);
+
+	// scale output to window
+    SDL_Rect output;
+    get_window_size(&output);
+
+    SDL_RenderClear(renderer); 
+    SDL_RenderCopy(renderer, texture, NULL, &output);
+    SDL_RenderPresent(renderer);
+}
+void ui_window_update(uint32_t* ui_framebuffer){
+    SDL_UpdateTexture(ui_texture, NULL, ui_framebuffer, GB_WIDTH * sizeof(uint32_t));
+
+	// scale output to window
+    SDL_Rect output;
+    get_window_size(&output);
+
+    SDL_RenderClear(renderer); 
+    SDL_RenderCopy(renderer, texture, NULL, &output);   // redraw game
+    SDL_RenderCopy(renderer, ui_texture, NULL, &output); // overlay ui
     SDL_RenderPresent(renderer);
 }
 
@@ -149,62 +213,73 @@ void check_events(Status* s, Memory* m){
 			if (key == SDLK_BACKSPACE) joypad_set_button(m, JP_SELECT, 1, 1);
 			if (key == SDLK_RETURN) joypad_set_button(m, JP_START, 1, 1);
 
+			// function keys
 			if (key == SDLK_F1) {
 				joypad_set_button(m, JP_A, 1, 1);
 				joypad_set_button(m, JP_B, 1, 1);
 				joypad_set_button(m, JP_SELECT, 1, 1);
 				joypad_set_button(m, JP_START, 1, 1);
 			}
+			if (key == SDLK_F11) toggle_fullscreen(s);
 
-			// emulation
-			if (key == SDLK_o) 
-				s->new_game = 1;
-			if (key == SDLK_r) 
-				s->restart_triggered = 1;
+			// ctrl bindings
+			if (mods & KMOD_CTRL) { // emulation control
 
-			if (key == SDLK_n){
+				// file loading
+				if (key == SDLK_o) s->new_game = 1;
+				if (key == SDLK_r) s->restart_triggered = 1;
+
+				// pause and speed
+				if (key == SDLK_f) s->fast_forward = !s->fast_forward;
+				if (key == SDLK_n){
+					if (mods & KMOD_LSHIFT) s->advance_cycle = 1; 
+					else s->advance_frame = 1;
+					s->paused = 0;
+				}
+				if (key == SDLK_p) s->paused = !s->paused;
+				// logging
+				if (key == SDLK_l){
+					if(!s->print_frame) print_table_header(s); // print header if first frame printed
 				
-				if (mods & KMOD_LSHIFT) s->advance_cycle = 1; 
-				else s->advance_frame = 1;
-				s->paused = 0;
+					if (mods & KMOD_LSHIFT) s->print_cycle = !s->print_cycle; 
+					else s->print_frame = !s->print_frame; 
+				}
+				if (key == SDLK_m) s->print_memory = 1;
+
+				// video
+				if (key == SDLK_v) s->show_vram_viewer = !s->show_vram_viewer;
+				switch (key) { // set window size gameboy resolution * key
+					case SDLK_1: set_window_size(1); break; 
+					case SDLK_2: set_window_size(2); break; 
+					case SDLK_3: set_window_size(3); break;
+					case SDLK_4: set_window_size(4); break;
+					case SDLK_5: set_window_size(5); break;
+					case SDLK_6: set_window_size(6); break;
+					case SDLK_7: set_window_size(7); break;
+					case SDLK_8: set_window_size(8); break;
+					case SDLK_9: set_window_size(9); break;
+				} 
 			}
-			
-			if (key == SDLK_p) 
-				s->paused = !s->paused;
-			// logging
-			if (key == SDLK_l){
-				if(!s->print_frame) print_table_header(s); 
-			
-				if (mods & KMOD_LSHIFT) s->print_cycle = !s->print_cycle; 
-				else s->print_frame = !s->print_frame; 
-			}
-			if (key == SDLK_m) 
-				s->print_memory = 1;
-			// speed
-			if (key == SDLK_f) 
-				s->fast_forward = 1;
-			// video
-			if (key == SDLK_v) 
-				s->show_vram_viewer = !s->show_vram_viewer;
-			// palette
-			switch (key) {
-				case SDLK_1: apply_palette(m->ppu, 0, 1); break; // black and white
-				case SDLK_2: apply_palette(m->ppu, s->game_id, 0); break; // game specific palette
-				case SDLK_3: apply_palette(m->ppu, 1, 1); break;
-				case SDLK_4: apply_palette(m->ppu, 2, 1); break;
-				case SDLK_5: apply_palette(m->ppu, ID_TETRIS, 0); break;
-				case SDLK_6: apply_palette(m->ppu, ID_ALLEYWAY, 0); break;
-				case SDLK_7: apply_palette(m->ppu, ID_MARIO_LAND_2, 0); break;
-				case SDLK_8: apply_palette(m->ppu, ID_WARIO_LAND, 0); break;
-				case SDLK_9: apply_palette(m->ppu, ID_DR_MARIO, 0); break;
-				case SDLK_0: apply_palette(m->ppu, ID_POKEMONRED, 0); break;
+
+			// alt bindings
+			else if (mods & KMOD_ALT) {
+				switch (key) {
+					case SDLK_1: apply_palette(m->ppu, 0, 1); break; // black and white
+					case SDLK_2: apply_palette(m->ppu, s->game_id, 0); break; // game specific palette
+					case SDLK_3: apply_palette(m->ppu, 1, 1); break;
+					case SDLK_4: apply_palette(m->ppu, 2, 1); break;
+					case SDLK_5: apply_palette(m->ppu, ID_TETRIS, 0); break;
+					case SDLK_6: apply_palette(m->ppu, ID_ALLEYWAY, 0); break;
+					case SDLK_7: apply_palette(m->ppu, ID_MARIO_LAND_2, 0); break;
+					case SDLK_8: apply_palette(m->ppu, ID_WARIO_LAND, 0); break;
+					case SDLK_9: apply_palette(m->ppu, ID_DR_MARIO, 0); break;
+					case SDLK_0: apply_palette(m->ppu, ID_POKEMONRED, 0); break;
+				} 
+				
+				if (key == SDLK_RETURN) toggle_fullscreen(s);
 			}
 
 		} 
-		if (e.type == SDL_KEYDOWN) { // allow key to be held down
-			if (key == SDLK_RSHIFT) 
-				s->print_cycle = 1;
-		}
 		if (e.type == SDL_KEYUP) { // for held keys, not toggled keys
 			//controls
 			if (key == SDLK_w || key == SDLK_UP) joypad_set_button(m, JP_UP, 0, 0);
@@ -223,14 +298,6 @@ void check_events(Status* s, Memory* m){
 				joypad_set_button(m, JP_SELECT, 0, 1);
 				joypad_set_button(m, JP_START, 0, 1);
 			}
-
-			//logging
-			if (key == SDLK_RSHIFT) 
-				s->print_cycle = 0; // only print on hold, do not toggle
-
-			// speed
-			if (key == SDLK_f) 
-				s->fast_forward = 0; // only ff on hold, do not toggle
 		}
 		if (e.type == SDL_CONTROLLERBUTTONDOWN) {
 			switch (e.cbutton.button) {
@@ -257,6 +324,7 @@ void check_events(Status* s, Memory* m){
 			}
 		}
 	}
+	update_ui(s);
 }
 
 void window_destroy(void) {
@@ -266,48 +334,3 @@ void window_destroy(void) {
     SDL_Quit();
 }
 
-void pause_framebuffer(uint32_t* framebuffer) {
-	// adds pause icon to screen
-	
-	int row = 160; // pixels in row
-	
-	// left part of pause icon
-	for (int i = 2;i<8;i++){
-		framebuffer[row*2 + i] = 0xFFFF0000;
-		framebuffer[row*3 + i] = 0xFFFF0000;
-	}
-	
-	for (int i = 4;i<12;i++){
-		framebuffer[row*i + 2] = 0xFFFF0000;
-		framebuffer[row*i + 3] = 0xFFFF0000;
-		framebuffer[row*i + 4] = 0xFFFFFFFF;
-		framebuffer[row*i + 5] = 0xFFFFFFFF;
-		framebuffer[row*i + 6] = 0xFFFF0000;
-		framebuffer[row*i + 7] = 0xFFFF0000;
-	}
-	
-	for (int i = 2;i<8;i++){
-		framebuffer[row*12 + i] = 0xFFFF0000;
-		framebuffer[row*13 + i] = 0xFFFF0000;
-	}
-	
-	// right part of pause icon
-	for (int i = 10;i<16;i++){
-		framebuffer[row*2 + i] = 0xFFFF0000;
-		framebuffer[row*3 + i] = 0xFFFF0000;
-	}
-	
-	for (int i = 4;i<12;i++){
-		framebuffer[row*i + 10] = 0xFFFF0000;
-		framebuffer[row*i + 11] = 0xFFFF0000;
-		framebuffer[row*i + 12] = 0xFFFFFFFF;
-		framebuffer[row*i + 13] = 0xFFFFFFFF;
-		framebuffer[row*i + 14] = 0xFFFF0000;
-		framebuffer[row*i + 15] = 0xFFFF0000;
-	}
-	
-	for (int i = 10;i<16;i++){
-		framebuffer[row*12 + i] = 0xFFFF0000;
-		framebuffer[row*13 + i] = 0xFFFF0000;
-	}
-}

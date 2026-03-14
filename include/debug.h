@@ -18,6 +18,7 @@ typedef struct Status {
 	int restart_triggered;
 	int new_game;
 
+	// emulator performance metrics
 	uint64_t cycles; // tracks physical cpu cycles in ticks
 	uint64_t instruction_count; // tracks instructions run
 	
@@ -46,6 +47,7 @@ typedef struct Status {
 	// video
 	uint8_t game_id; // game id for specific palette if available
 	int show_vram_viewer;
+	int fullscreen;
 	
 	// emulation speed
 	int advance_frame; // jump to next frame

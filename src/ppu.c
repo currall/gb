@@ -63,7 +63,6 @@ void ppu_init(PPU* ppu, Memory* m) {
 	ppu_mode_set(ppu, m, MODE_VBLANK);
     ppu->scanline = 0;
     ppu->dot = 0;
-    ppu->frame_ready = 0;
 }
 
 void draw_bg(PPU* ppu, uint32_t* framebuffer, Memory* m) {
@@ -273,6 +272,12 @@ void draw_fg(PPU* ppu, uint32_t* framebuffer, Memory* m) {
 	}
 }
 
+void frame_ready(PPU* ppu){
+    for (int i = 0; i < (160*144); i++) {
+        ppu->framebuffer[i] = framebuffer[i];
+    }
+}
+
 void ppu_step(PPU* ppu, Memory* m, Status* s, int cycles) {
 
 	uint8_t lcdc = read8(m, LCDC);
@@ -282,7 +287,6 @@ void ppu_step(PPU* ppu, Memory* m, Status* s, int cycles) {
 		ppu->window_line = 0;
         ppu->dot = 0;
         ppu->mode = MODE_OAM;
-		ppu->frame_ready = 0;
         write8(m, LY, 0); // set scanline to 0
         uint8_t stat = read8(m, STAT);
         write8(m, STAT, stat & 0xFC); 
@@ -304,7 +308,7 @@ void ppu_step(PPU* ppu, Memory* m, Status* s, int cycles) {
 				
 				if (ppu->scanline == 144) {
 					ppu_mode_set(ppu, m, MODE_VBLANK);
-					ppu->frame_ready = 1;
+                    frame_ready(ppu);
 					// vblank interrupt
 					uint8_t iflags = read8(m, IF);
 					iflags |= (1 << 0); 
@@ -312,7 +316,6 @@ void ppu_step(PPU* ppu, Memory* m, Status* s, int cycles) {
 					
 				} else {
 					ppu_mode_set(ppu, m, MODE_OAM);
-					ppu->frame_ready = 0;
 				}
 			} break;
 		
@@ -354,10 +357,6 @@ void ppu_step(PPU* ppu, Memory* m, Status* s, int cycles) {
 			} break;
 		
 	}
-}
-
-int ppu_frame_ready(PPU* ppu) {
-    return ppu->frame_ready;
 }
 
 uint32_t* ppu_get_framebuffer(PPU* ppu) {

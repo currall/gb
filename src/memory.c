@@ -408,11 +408,19 @@ void write8(Memory* m, uint16_t addr, uint8_t value) {
         int mode = value >> 7;
 
         if (mode == 0) {
-            // dma
+            // gdma
             for (int i = 0; i < length; i++) {
                 m->vram[m->vram_bank][(dst + i) - 0x8000] = raw_read(m, src + i);
             }
             m->io[0x55] = 0xFF; // transfer complete
+        }
+        if (mode == 1) {
+            //hdma
+            m->hdma_active = 1;
+            m->hdma_src = src;
+            m->hdma_dst = dst;
+            m->hdma_len = length;
+            m->io[0x55] = value & 0x7F; // bit 7 = 0 showing active
         }
     }
 

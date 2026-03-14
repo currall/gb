@@ -21,7 +21,7 @@ typedef struct Status Status;
 #define JP_SELECT (1 << 2)
 #define JP_START  (1 << 3)
 
-int  window_init(char* file);
+int  window_init(char* file, Status* s);
 void window_update(uint32_t* framebuffer);
 void ui_window_update(uint32_t* ui_framebuffer);
 

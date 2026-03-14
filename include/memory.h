@@ -24,6 +24,12 @@ typedef struct Memory {
 	uint8_t vram_bank;
 	uint8_t wram_bank;
 
+	// -- HBLANK DMA --
+	int hdma_active;
+	uint16_t hdma_src;
+	uint16_t hdma_dst;
+	uint16_t hdma_len; // bytes to transfer
+
 	// === MEMORY ===
 
 	uint8_t vram[2][0x2000];   	// 8000-9FFF (2 vram banks under cgb)

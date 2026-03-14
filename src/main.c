@@ -78,7 +78,8 @@ int main(int argc, char *argv[]) {
 
 	char* file = 0;
 	if (argc>1) // read rom from arg if possible
-        file = argv[1];
+		if (argv[1][0] == 'f') s.fullscreen = 1;
+        else file = argv[1];
 	
 	// init system
 	file = gb_init(file, &reg, &m, &s, &audio);
@@ -92,14 +93,14 @@ int main(int argc, char *argv[]) {
 	
 	// create window
 	ppu_init(&ppu, &m);
-	window_init(file); // start main window
+	window_init(file, &s); // start main window
 	vram_window_init(); // start vram window in background
 	
 	// cpu loop
 	float frame_start = clock();
 	clock_t second_count = clock();
 	if (PRINT_DEBUG) printf("[MAIN] cpu cycle start\n");
-
+	float target_fps = (60.0 * ((float)s.speed / 100));
 	
 	while(s.running){ // main loop
 		
@@ -166,10 +167,10 @@ int main(int argc, char *argv[]) {
 			// =====================================
 			
 			if (!s.fast_forward) { // skip frame delay if in fast forward
-				while (((double)(clock() - frame_start) / CLOCKS_PER_SEC) < (1.0 / 60.0)) {
+				while (((double)(clock() - frame_start) / CLOCKS_PER_SEC) < (1.0 / target_fps)) {
 					// do nothing until frame time has passed
 				}
-				frame_start += (float)CLOCKS_PER_SEC / 60;
+				frame_start += (float)CLOCKS_PER_SEC / target_fps;
 			} else {
 				frame_start = clock();
 			}
@@ -180,6 +181,9 @@ int main(int argc, char *argv[]) {
 				//printf("[TIME] Sync!! frame timer: %f, clock: %d\n",frame_start,clock());
 				frame_start = clock();
 			}
+
+			// check if target speed has changed
+			target_fps = (60.0 * ((float)s.speed / 100));
 
 			// reset frame cycle counter
 			s.frame_tracker = 0;

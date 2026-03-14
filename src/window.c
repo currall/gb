@@ -41,7 +41,7 @@ void ui_init() {
 	clear_ui_framebuffer();
 }
 
-int window_init(char* file) {
+int window_init(char* file, Status* s) {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) != 0)
         return 0;
 	
@@ -58,6 +58,10 @@ int window_init(char* file) {
     );
 
     if (!window) return 0;
+	if (s->fullscreen)
+        SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+    else
+        SDL_SetWindowFullscreen(window, 0);
 
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     texture  = SDL_CreateTexture(
@@ -147,6 +151,20 @@ void joypad_set_button(Memory* m, uint8_t mask, int pressed, int is_button_group
     }
 }
 
+void speed_control(Status* s, int type) {
+
+	if (type == 0){
+		s->speed = 100;
+	}
+	else if (type == 1){
+		s->speed += 10;
+	}
+	else if (type == -1){
+		s->speed -= 10;
+	}
+
+}
+
 void check_events(Status* s, Memory* m){	
 
 	/*
@@ -213,6 +231,8 @@ void check_events(Status* s, Memory* m){
 				joypad_set_button(m, JP_START, 1, 1);
 			}
 			if (key == SDLK_F11) toggle_fullscreen(s);
+			if (key == SDLK_LALT) s->ui_show_palettes = 1;
+			if (key == SDLK_ESCAPE) s->ui_show_controls = !s->ui_show_controls;
 
 			// ctrl bindings
 			if (mods & KMOD_CTRL) { // emulation control
@@ -222,13 +242,22 @@ void check_events(Status* s, Memory* m){
 				if (key == SDLK_r) s->restart_triggered = 1;
 
 				// pause and speed
-				if (key == SDLK_f) s->fast_forward = !s->fast_forward;
+				if (key == SDLK_f){
+					if (mods & KMOD_LSHIFT) s->fast_forward = !s->fast_forward; 
+					else s->ui_show_fps = !s->ui_show_fps;
+				}
 				if (key == SDLK_n){
 					if (mods & KMOD_LSHIFT) s->advance_cycle = 1; 
 					else s->advance_frame = 1;
 					s->paused = 0;
 				}
 				if (key == SDLK_p) s->paused = !s->paused;
+				if (key == SDLK_EQUALS) {
+					if (mods & KMOD_LSHIFT) speed_control(s,0);
+					else speed_control(s,1);
+				}
+				if (key == SDLK_MINUS) speed_control(s,-1);
+
 				// logging
 				if (key == SDLK_l){
 					if(!s->print_frame) print_table_header(s); // print header if first frame printed
@@ -290,6 +319,9 @@ void check_events(Status* s, Memory* m){
 				joypad_set_button(m, JP_SELECT, 0, 1);
 				joypad_set_button(m, JP_START, 0, 1);
 			}
+
+			// function keys
+			if (key == SDLK_LALT) s->ui_show_palettes = 0;
 		}
 		if (e.type == SDL_CONTROLLERBUTTONDOWN) {
 			switch (e.cbutton.button) {

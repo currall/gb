@@ -11,24 +11,12 @@ void status_init(Status* s) {
 
 	// --- emulator status ---
 	s->running = 1;
-	s->paused = 0;
-
-	s->restart_triggered = 0;
-	s->new_game = 0;
-
-	s->cycles = 0; 
-	s->instruction_count = 0;
-	
-	s->div_tracker = 0;
-	s->frame_tracker = 0;
-	s->second_tracker = 0;
-	s->total_cycles = 0;
-	s->total_seconds = 0;
 
 	// --- emulation speed ---
 	s->advance_frame = 0;
 	s->advance_cycle = 0;
 	s->fast_forward = 0;
+	s->speed = 100;
 
 	// --- debug printing ---
 	s->print_cycle = 0;
@@ -43,9 +31,6 @@ void status_init(Status* s) {
 	s->show_mbc = 			1;
 	s->show_ime = 			0;
 	s->show_cycles = 		1;
-
-	// --- video ---
-	s->show_vram_viewer = 0;
 	
 }
 

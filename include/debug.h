@@ -44,6 +44,10 @@ typedef struct Status {
 	int show_mbc;
 	int show_ime;
 	int show_cycles;
+
+	int ui_show_fps;
+	int ui_show_palettes;
+	int ui_show_controls;
 	
 	// video
 	uint8_t game_id; // game id for specific palette if available
@@ -54,6 +58,7 @@ typedef struct Status {
 	int advance_frame; // jump to next frame
 	int advance_cycle; // jump to next instruction
 	int fast_forward;
+	int speed;
 	
 } Status;
 

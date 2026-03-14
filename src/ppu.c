@@ -58,6 +58,25 @@ void check_lyc(PPU* ppu, Memory* m) {
     }
 }
 
+void hdma(Memory* m) {
+    if (!m->hdma_active) return;
+
+    // transfer 16 bytes
+    for (int i = 0; i < 0x10; i++) {
+        m->vram[m->vram_bank][(m->hdma_dst & 0x1FFF)] = raw_read(m, m->hdma_src);
+        m->hdma_src++;
+        m->hdma_dst++;
+    }
+
+    m->hdma_len -= 0x10;
+    m->io[0x55] = (m->hdma_len / 16) - 1;
+
+    if (m->hdma_len == 0) {
+        m->hdma_active = 0;
+        m->io[0x55] = 0xFF;
+    }
+}
+
 void ppu_init(PPU* ppu, Memory* m) {
 	for (int i = 0; i < 160 * 144; i++) framebuffer[i] = 0xFFFFFFFF;
 	ppu_mode_set(ppu, m, MODE_VBLANK);
@@ -332,6 +351,7 @@ void ppu_step(PPU* ppu, Memory* m, Status* s, int cycles) {
 					ppu->scanline = 0;
 					ppu->window_line = 0;
 					write8(m, LY, ppu->scanline); // reset LY
+                    check_lyc(ppu, m);
 					ppu_mode_set(ppu,m,MODE_OAM);
 				}
 			} break;
@@ -341,10 +361,6 @@ void ppu_step(PPU* ppu, Memory* m, Status* s, int cycles) {
 			if (ppu->dot >= 80) {
 				ppu->dot -= 80;
 
-				if (ppu->scanline < 144) {
-					draw_bg(ppu, framebuffer, m);
-					draw_fg(ppu, framebuffer, m);
-				}
 				ppu_mode_set(ppu,m,MODE_VRAM);				
 			} break;
 		
@@ -352,6 +368,11 @@ void ppu_step(PPU* ppu, Memory* m, Status* s, int cycles) {
 		
 			if (ppu->dot >= 172) {
 				ppu->dot -= 172;
+				if (ppu->scanline < 144) {
+					draw_bg(ppu, framebuffer, m);
+					draw_fg(ppu, framebuffer, m);
+				}
+                hdma(m);
 				ppu_mode_set(ppu,m,MODE_HBLANK);
 				
 			} break;

@@ -8,8 +8,15 @@ Launch emulator, and select Game Boy ROM through file picker.
 
 Alternatively, launch emulator using:
 ```
-main.exe PATH_TO_GAME
+main.exe [options] [game]
 ```
+
+### Arguments
+
+| Option | Function |
+| - | - |
+| `-f` | Start in full-screen |
+| `-v` | Show VRAM viewer |
 
 ### BIOS
 
@@ -38,6 +45,7 @@ Emulator supports using a Nintendo Game Boy / Game Boy Color boot ROM in the exe
 | *Game Management* |
 | **O** | Ctrl | Open new ROM |
 | **R** | Ctrl | Restart Game |
+| **S** | Ctrl | Save Game |
 | *Debug Logging*|
 | **L** | Ctrl | Enable per-frame debug output log |
 | **L** | Ctrl + Shift| Enable per-cycle debug output log |

@@ -263,6 +263,7 @@ void print_controls(uint32_t color, uint32_t bg) {
     print_word("FILE:",x,y,color,no_bg); y+=7;
     print_word("-CTRL O:OPEN NEW GAME",x,y,color,no_bg); y+=7;
     print_word("-CTRL R:RESET",x,y,color,no_bg); y+=7;
+    print_word("-CTRL S:SAVE GAME",x,y,color,no_bg); y+=7;
     y+=4;
     print_word("VIDEO:",x,y,color,no_bg); y+=7;
     print_word("-F11   :FULLSCREEN",x,y,color,no_bg); y+=7;

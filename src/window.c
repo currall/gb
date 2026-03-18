@@ -231,7 +231,7 @@ void check_events(Status* s, Memory* m){
 				joypad_set_button(m, JP_START, 1, 1);
 			}
 			if (key == SDLK_F11) toggle_fullscreen(s);
-			if (key == SDLK_LALT) s->ui_show_palettes = 1;
+			if (key == SDLK_LALT && !s->cgb_mode) s->ui_show_palettes = 1;
 			if (key == SDLK_ESCAPE) s->ui_show_controls = !s->ui_show_controls;
 
 			// ctrl bindings
@@ -240,6 +240,7 @@ void check_events(Status* s, Memory* m){
 				// file loading
 				if (key == SDLK_o) s->new_game = 1;
 				if (key == SDLK_r) s->restart_triggered = 1;
+				if (key == SDLK_s) s->save_triggered = 1;
 
 				// pause and speed
 				if (key == SDLK_f){
@@ -284,18 +285,20 @@ void check_events(Status* s, Memory* m){
 
 			// alt bindings
 			else if (mods & KMOD_ALT) {
-				switch (key) {
-					case SDLK_1: apply_palette(m->ppu, 0, 1); break; // black and white
-					case SDLK_2: apply_palette(m->ppu, s->game_id, 0); break; // game specific palette
-					case SDLK_3: apply_palette(m->ppu, 1, 1); break;
-					case SDLK_4: apply_palette(m->ppu, 2, 1); break;
-					case SDLK_5: apply_palette(m->ppu, ID_TETRIS, 0); break;
-					case SDLK_6: apply_palette(m->ppu, ID_ALLEYWAY, 0); break;
-					case SDLK_7: apply_palette(m->ppu, ID_MARIO_LAND_2, 0); break;
-					case SDLK_8: apply_palette(m->ppu, ID_WARIO_LAND, 0); break;
-					case SDLK_9: apply_palette(m->ppu, ID_DR_MARIO, 0); break;
-					case SDLK_0: apply_palette(m->ppu, ID_POKEMONRED, 0); break;
-				} 
+				if (!s->cgb_mode) {
+					switch (key) {
+						case SDLK_1: apply_palette(m->ppu, 0, 1); break; // black and white
+						case SDLK_2: apply_palette(m->ppu, s->game_id, 0); break; // game specific palette
+						case SDLK_3: apply_palette(m->ppu, 1, 1); break;
+						case SDLK_4: apply_palette(m->ppu, 2, 1); break;
+						case SDLK_5: apply_palette(m->ppu, ID_TETRIS, 0); break;
+						case SDLK_6: apply_palette(m->ppu, ID_ALLEYWAY, 0); break;
+						case SDLK_7: apply_palette(m->ppu, ID_MARIO_LAND_2, 0); break;
+						case SDLK_8: apply_palette(m->ppu, ID_WARIO_LAND, 0); break;
+						case SDLK_9: apply_palette(m->ppu, ID_DR_MARIO, 0); break;
+						case SDLK_0: apply_palette(m->ppu, ID_POKEMONRED, 0); break;
+					} 
+				}
 				
 				if (key == SDLK_RETURN) toggle_fullscreen(s);
 			}

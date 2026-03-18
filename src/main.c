@@ -44,6 +44,8 @@ char* gb_init(char* file, Registers* reg, Memory* m, Status* s, Audio* audio) {
 	mem_init(m);
 	status_init(s);
 	audio_init(audio, m);
+
+	s->cgb_mode = m->cgb_mode;
 	
 	switch (m->boot_rom_type) {
 		case 0: simulate_boot_rom(reg,m, s->game_id); break; // simulate boot rom if not found
@@ -77,9 +79,16 @@ int main(int argc, char *argv[]) {
 	m.ppu = &ppu;
 
 	char* file = 0;
-	if (argc>1) // read rom from arg if possible
-		if (argv[1][0] == 'f') s.fullscreen = 1;
-        else file = argv[1];
+	for (int arg = 1; arg < argc; arg++) {
+		if (argv[arg][0] == '-') {
+			switch (argv[arg][1]) {
+				case 'f': s.fullscreen = 1;
+				case 'v': s.show_vram_viewer = 1;
+			}
+		} else {
+			file = argv[arg]; // read rom from arg if possible
+		}
+	}
 	
 	// init system
 	file = gb_init(file, &reg, &m, &s, &audio);
@@ -143,6 +152,10 @@ int main(int argc, char *argv[]) {
 
 			// input
 			check_events(&s,&m);
+			if (s.save_triggered) {
+				save_game(file, m.eram, m.ram_size);
+				s.save_triggered = 0;
+			}
 
 			// restart
 			if (s.restart_triggered) {

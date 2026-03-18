@@ -138,19 +138,23 @@ void draw_bg(PPU* ppu, uint32_t* framebuffer, Memory* m) {
         if (using_window) {
             tile_map = win_map_base;
             tile_row_idx = ppu->window_line / 8;
-            tile_col_idx = (x - (wx - 7)) / 8; // no scrolling on window layer
+            tile_col_idx = (x - window_x_trigger) / 8; // no scrolling on window layer
             pixel_y = ppu->window_line % 8;
-            pixel_x = (x - (wx - 7)) % 8;
+            pixel_x = (x - window_x_trigger) % 8;
         } else {
             tile_map = bg_map_base;
-            tile_row_idx = ((scanline + scy) & 0xFF) / 8;
-            tile_col_idx = ((x + scx) & 0xFF) / 8;
-            pixel_y = (scanline + scy) % 8;
-            pixel_x = (x + scx) % 8;
+            int bg_y = (scanline + scy) & 0xFF;
+            int bg_x = (x + scx) & 0xFF;
+
+            tile_row_idx = (bg_y >> 3) & 31;
+            tile_col_idx = (bg_x >> 3) & 31;
+
+            pixel_y = bg_y & 7;
+            pixel_x = bg_x & 7;
         }
 
         uint16_t tile_address = tile_map + (tile_row_idx * 32) + tile_col_idx;
-        uint8_t tile_id = read_vram(m, tile_address, 0);
+        int tile_id = read_vram(m, tile_address, 0);
 	
 		// read tile attributes
 		uint8_t attr = read_vram(m, tile_address, 1);

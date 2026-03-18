@@ -15,8 +15,10 @@ typedef struct Status {
 	int running;
 	int paused;
 	int fps;
+	int cgb_mode;
 
 	int restart_triggered;
+	int save_triggered;
 	int new_game;
 
 	// emulator performance metrics

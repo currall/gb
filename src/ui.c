@@ -57,7 +57,7 @@ uint8_t symbols[6][5] = {
     {0b00000, 0b00000, 0b11110, 0b00000, 0b00000}, // -
     {0b01010, 0b11111, 0b01010, 0b11111, 0b01010}, // #
     {0b00001, 0b00001, 0b01001, 0b11111, 0b01000}, // }: return arrow (enter)
-    {0b00000, 0b00100, 0b01110, 0b00100, 0b00000}, // +
+    {0b00100, 0b00100, 0b11111, 0b00100, 0b00100}, // +
 };
 
 // framebuffer functions
@@ -140,6 +140,7 @@ void draw_symbol(char c, int x, int y, uint32_t color) {
         case '-': index = 2; break;
         case '#': index = 3; break;
         case '}': index = 4; break;
+        case '+': index = 5; break;
     }
 
     uint8_t* letter = symbols[index];

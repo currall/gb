@@ -42,25 +42,31 @@ Emulator supports using a Nintendo Game Boy / Game Boy Color boot ROM in the exe
 
 | Hotkey | Modifier | Function |
 | - | - | - |
-| *Game Management* |
+| **Esc** | | Show Hotkeys |
+| *File Management* |
 | **O** | Ctrl | Open new ROM |
 | **R** | Ctrl | Restart Game |
 | **S** | Ctrl | Save Game |
+| *Video* |
+| **F11** | | Toggle Fullscreen |
+| **Enter** | Alt | Toggle Fullscreen |
+| **F** | Ctrl | Toggle Framerate (FPS) viewer |
+| **0-9** | Ctrl | Change Window Size |
+| **Alt** | | Show available color palettes |
+| **0-9** | Alt | Select color palette |
+| **V** | Ctrl | Toggle VRAM Display Window |
+| *Speed* |
+| **P** | Ctrl | Pause |
+| **+** | Ctrl | Increase Speed 10% |
+| **-** | Ctrl | Decrease Speed 10% |
+| **+** | Ctrl + Shift | Reset Speed to 100% |
+| **F** | Ctrl | Fast-Forward (disables wait between each frame) |
+| **N** | Ctrl | Run until next frame |
+| **N** | Ctrl + Shift | Run until next instruction |
 | *Debug Logging*|
 | **L** | Ctrl | Enable per-frame debug output log |
 | **L** | Ctrl + Shift| Enable per-cycle debug output log |
 | **M** | Ctrl | Print memory to output log |
-| *Speed* |
-| **F** | Ctrl | Fast-Forward (disables wait between each frame) |
-| **N** | Ctrl | Run until next frame |
-| **N** | Ctrl + Shift | Run until next instruction |
-| **P** | Ctrl | Pause |
-| *Video* |
-| **F11** | | Toggle Fullscreen |
-| **Enter** | Alt | Toggle Fullscreen |
-| **V** | Ctrl | Toggle VRAM Display Window |
-| **0-9** | Ctrl | Change Window Size |
-| **0-9** | Alt | Select color palette |
 
 #### Palettess
 
@@ -83,12 +89,13 @@ Emulator supports using a Nintendo Game Boy / Game Boy Color boot ROM in the exe
 - Emulates Nintendo Game Boy Color games
 - Controller Support
 - Game saves
-- Output debug information per-frame or per-instruction
-- VRAM viewer window
 - Pause
+- Colorise Nintendo Game Boy games with GBC palettes
+- Output debug information per-frame or per-instruction
 - Frame Stepping
 - Instruction Stepping
 - Fast-Forward
+- VRAM viewer window
 
 <br>
 

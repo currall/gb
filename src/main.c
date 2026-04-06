@@ -152,18 +152,27 @@ int main(int argc, char *argv[]) {
 
 			// input
 			check_events(&s,&m);
-			if (s.save_triggered) {
-				save_game(file, m.eram, m.ram_size);
-				s.save_triggered = 0;
-			}
 
-			// restart
-			if (s.restart_triggered) {
+			// file operations
+			if (s.save_triggered == 1) { // sram save
+				s.save_triggered = 0;
+				save_game(file, m.eram, m.ram_size);
+			}
+			if (s.save_triggered == 2) { // save state
+				s.save_triggered = 0;
+				save_state(file, &m, &reg);
+			}
+			if (s.restart_triggered == 1) { // restart
 				s.restart_triggered = 0;
 				if (m.ram_size > 0) save_game(file, m.eram, m.ram_size); // save before resetting	
 				file = gb_init(file, &reg, &m, &s, &audio);
 			}
-			if (s.new_game) {
+			if (s.restart_triggered == 2) { // load state
+				s.restart_triggered = 0;
+				if (m.ram_size > 0) save_game(file, m.eram, m.ram_size); // save before resetting	
+				load_state(file,&m,&reg);
+			}
+			if (s.new_game) { // open new rom
 				s.new_game = 0;
 				if (m.ram_size > 0) save_game(file, m.eram, m.ram_size); // save before new game
 				file = gb_init(0, &reg, &m, &s, &audio);

@@ -238,9 +238,15 @@ void check_events(Status* s, Memory* m){
 			if (mods & KMOD_CTRL) { // emulation control
 
 				// file loading
-				if (key == SDLK_o) s->new_game = 1;
 				if (key == SDLK_r) s->restart_triggered = 1;
-				if (key == SDLK_s) s->save_triggered = 1;
+				if (key == SDLK_o) {
+					if (mods & KMOD_LSHIFT) s->restart_triggered = 2;
+					else s->new_game = 1;
+				}
+					if (key == SDLK_s) {
+					if (mods & KMOD_LSHIFT) s->save_triggered = 2;
+					else s->save_triggered = 1;
+				}
 
 				// pause and speed
 				if (key == SDLK_f){

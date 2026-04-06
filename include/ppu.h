@@ -35,9 +35,9 @@ typedef struct PPU {
 
     uint32_t framebuffer[160*144]; // safe framebuffer to draw to screen
 
-    int mode;		
-    int scanline;	// number of scanlines
-    int dot;		// cycles in current scanline
+    uint16_t mode;		
+    uint16_t scanline;	// number of scanlines
+    uint16_t dot;		// cycles in current scanline
     uint8_t window_line; // line of window texture
 
     // --- cgb ---

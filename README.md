@@ -47,11 +47,13 @@ Emulator supports using a Nintendo Game Boy / Game Boy Color boot ROM in the exe
 | **O** | Ctrl | Open new ROM |
 | **R** | Ctrl | Restart Game |
 | **S** | Ctrl | Save Game |
+| **S** | Ctrl + Shift | Save State |
+| **L** | Ctrl + Shift | Load State |
 | *Video* |
 | **F11** | | Toggle Fullscreen |
 | **Enter** | Alt | Toggle Fullscreen |
 | **F** | Ctrl | Toggle Framerate (FPS) viewer |
-| **0-9** | Ctrl | Change Window Size |
+| **1-9** | Ctrl | Change Window Size |
 | **Alt** | | Show available color palettes |
 | **0-9** | Alt | Select color palette |
 | **V** | Ctrl | Toggle VRAM Display Window |
@@ -114,7 +116,7 @@ Emulator supports using a Nintendo Game Boy / Game Boy Color boot ROM in the exe
 After updating `MINGW64`, run the following command to install packages needed:
 
 ```
-pacman -S make mingw-w64-x86_64-gcc mingw-w64-x86_64-SDL2 mingw-w64-x86_64-SDL mingw-w64-x86_64-make
+pacman -S git make mingw-w64-x86_64-gcc mingw-w64-x86_64-SDL2 mingw-w64-x86_64-SDL mingw-w64-x86_64-make
 ```
 
 ### Download & Compile

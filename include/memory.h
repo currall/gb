@@ -19,8 +19,8 @@ typedef struct Memory {
 
 	// === CGB MODE ===
 
-	int cgb_mode;
-	int cgb_speed;
+	uint8_t cgb_mode;
+	uint8_t cgb_speed;
 	uint8_t vram_bank;
 	uint8_t wram_bank;
 

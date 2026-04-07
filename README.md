@@ -91,6 +91,7 @@ Emulator supports using a Nintendo Game Boy / Game Boy Color boot ROM in the exe
 - Emulates Nintendo Game Boy Color games
 - Controller Support
 - Game saves
+- Save states
 - Pause
 - Colorise Nintendo Game Boy games with GBC palettes
 - Output debug information per-frame or per-instruction

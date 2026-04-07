@@ -163,27 +163,23 @@ void save_state(char* f, Memory* m, Registers* reg) {
     // -- ppu
     fwrite(m->ppu, sizeof(PPU), 1, fp);
     // -- registers
-    fwrite(&m->cgb_mode, sizeof(uint8_t), 1, fp);
     fwrite(&m->cgb_speed, sizeof(uint8_t), 1, fp);
     fwrite(&m->vram_bank, sizeof(uint8_t), 1, fp);
     fwrite(&m->wram_bank, sizeof(uint8_t), 1, fp);
 
-    fwrite(&m->rom_size, sizeof(uint8_t), 1, fp);
-    fwrite(&m->cartridge_type, sizeof(uint8_t), 1, fp);
-    fwrite(&m->mbc_type, sizeof(uint8_t), 1, fp);
     fwrite(&m->mbc_bank1, sizeof(uint16_t), 1, fp);
     fwrite(&m->mbc_bank2, sizeof(uint8_t), 1, fp);
     fwrite(&m->mbc1_mode, sizeof(uint8_t), 1, fp);
     fwrite(&m->mbc_ram_enable, sizeof(uint8_t), 1, fp);
-    fwrite(&m->ram_size, sizeof(uint32_t), 1, fp);
-
-    fwrite(&m->j, sizeof(Joypad), 1, fp);
+    
     // -- memory
-    uint8_t address_space[0x10000] = {0};
-    for(int i = 0; i < 0x10000; i++){
-        address_space[i] = raw_read(m,i);
-    }
-    fwrite(address_space, sizeof(uint8_t), 0x10000, fp);
+    fwrite(m->vram, sizeof(uint8_t), 0x4000, fp);
+    fwrite(m->eram, sizeof(uint8_t), m->ram_size, fp);
+    fwrite(m->wram, sizeof(uint8_t), 0x8000, fp);
+    fwrite(&m->oam, sizeof(uint8_t), 0xA0, fp);
+    fwrite(&m->io, sizeof(uint8_t), 0x80, fp);
+    fwrite(&m->hram, sizeof(uint8_t), 0x7F, fp);
+    fwrite(&m->ie, sizeof(uint8_t), 1, fp);
 
     // close file
     fclose(fp);
@@ -230,34 +226,23 @@ void load_state(char* f, Memory* m, Registers* reg) {
     // -- ppu
     fread(m->ppu, sizeof(PPU), 1, fp);
     // -- registers
-    fread(&m->cgb_mode, 1, 1, fp);
     fread(&m->cgb_speed, 1, 1, fp);
     fread(&m->vram_bank, 1, 1, fp);
     fread(&m->wram_bank, 1, 1, fp);
     
-    fread(&m->rom_size, sizeof(uint8_t), 1, fp);
-    fread(&m->cartridge_type, sizeof(uint8_t), 1, fp);
-    fread(&m->mbc_type, sizeof(uint8_t), 1, fp);
     fread(&m->mbc_bank1, sizeof(uint16_t), 1, fp);
     fread(&m->mbc_bank2, sizeof(uint8_t), 1, fp);
     fread(&m->mbc1_mode, sizeof(uint8_t), 1, fp);
     fread(&m->mbc_ram_enable, sizeof(uint8_t), 1, fp);
-    fread(&m->ram_size, sizeof(uint32_t), 1, fp);
 
-    fread(&m->j, sizeof(Joypad), 1, fp);
     // -- memory
-    uint8_t address_space[0x10000] = {0};
-
-    if (fread(address_space, 1, 0x10000, fp) != 0x10000) {
-        printf("[FILE] Failed to read memory\n");
-        fclose(fp);
-        free(file);
-        return;
-    }
-
-    for (int i = 0; i < 0x10000; i++) {
-        raw_write(m, i, address_space[i]);
-    }
+    fread(m->vram, sizeof(uint8_t), 0x4000, fp);
+    fread(m->eram, sizeof(uint8_t), m->ram_size, fp);
+    fread(m->wram, sizeof(uint8_t), 0x8000, fp);
+    fread(&m->oam, sizeof(uint8_t), 0xA0, fp);
+    fread(&m->io, sizeof(uint8_t), 0x80, fp);
+    fread(&m->hram, sizeof(uint8_t), 0x7F, fp);
+    fread(&m->ie, sizeof(uint8_t), 1, fp);
 
     fclose(fp);
     printf("[FILE] Loaded state from file: %s\n", file);

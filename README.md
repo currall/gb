@@ -57,6 +57,7 @@ Emulator supports using a Nintendo Game Boy / Game Boy Color boot ROM in the exe
 | **Alt** | | Show available color palettes |
 | **0-9** | Alt | Select color palette |
 | **V** | Ctrl | Toggle VRAM Display Window |
+| **D** | Ctrl + Shift | Toggle UI Dark Mode |
 | *Speed* |
 | **P** | Ctrl | Pause |
 | **+** | Ctrl | Increase Speed 10% |

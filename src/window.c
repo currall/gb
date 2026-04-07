@@ -275,6 +275,9 @@ void check_events(Status* s, Memory* m){
 				if (key == SDLK_m) s->print_memory = 1;
 
 				// video
+				if (key == SDLK_d){
+					if (mods & KMOD_LSHIFT) s->ui_light_mode = !s->ui_light_mode; 
+				}
 				if (key == SDLK_v) s->show_vram_viewer = !s->show_vram_viewer;
 				switch (key) { // set window size gameboy resolution * key
 					case SDLK_1: set_window_size(1); break; 

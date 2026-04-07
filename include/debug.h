@@ -47,6 +47,7 @@ typedef struct Status {
 	int show_ime;
 	int show_cycles;
 
+	int ui_light_mode;
 	int ui_show_fps;
 	int ui_show_palettes;
 	int ui_show_controls;

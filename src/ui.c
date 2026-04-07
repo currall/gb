@@ -208,22 +208,22 @@ int print_combo(char* string, int number, int x, int y, uint32_t color, uint32_t
 
 // more ui
 
-void draw_palette(Palette p, int x, int y) {
+void draw_palette(Palette p, uint32_t bg, int x, int y) {
 
     for (int i = 0; i < 4; i++) {
-        draw_rect(x,y,x+7,y+7,0xFF000000);
+        draw_rect(x,y,x+7,y+7,bg);
         draw_rect(x+1,y+1,x+6,y+6,p.bg[i]);
         x+=9;
     }
     x+=5;
     for (int i = 0; i < 4; i++) {
-        draw_rect(x,y,x+7,y+7,0xFF000000);
+        draw_rect(x,y,x+7,y+7,bg);
         draw_rect(x+1,y+1,x+6,y+6,p.obj0[i]);
         x+=9;
     }
     x+=5;
     for (int i = 0; i < 4; i++) {
-        draw_rect(x,y,x+7,y+7,0xFF000000);
+        draw_rect(x,y,x+7,y+7,bg);
         draw_rect(x+1,y+1,x+6,y+6,p.obj1[i]);
         x+=9;
     }
@@ -238,16 +238,16 @@ void print_palettes(uint32_t color, uint32_t bg, uint8_t game_id) {
     print_word("PALETTES",x,y,color,no_bg);
     y+=11;
 
-    print_word("1:",x,y,color,no_bg); draw_palette(get_palette(0, 1), x+14, y); y+= 11;
-    print_word("2:",x,y,color,no_bg); draw_palette(get_palette(game_id, 0), x+14, y); y+= 11;
-    print_word("3:",x,y,color,no_bg); draw_palette(get_palette(1, 1), x+14, y); y+= 11;
-    print_word("4:",x,y,color,no_bg); draw_palette(get_palette(2, 1), x+14, y); y+= 11;
-    print_word("5:",x,y,color,no_bg); draw_palette(get_palette(ID_TETRIS, 0), x+14, y); y+= 11;
-    print_word("6:",x,y,color,no_bg); draw_palette(get_palette(ID_ALLEYWAY, 0), x+14, y); y+= 11;
-    print_word("7:",x,y,color,no_bg); draw_palette(get_palette(ID_MARIO_LAND_2, 0), x+14, y); y+= 11;
-    print_word("8:",x,y,color,no_bg); draw_palette(get_palette(ID_WARIO_LAND, 0), x+14, y); y+= 11;
-    print_word("9:",x,y,color,no_bg); draw_palette(get_palette(ID_DR_MARIO, 0), x+14, y); y+= 11;
-    print_word("0:",x,y,color,no_bg); draw_palette(get_palette(ID_POKEMONRED, 0), x+14, y); y+= 11;
+    print_word("1:",x,y,color,no_bg); draw_palette(get_palette(0, 1), color, x+14, y); y+= 11;
+    print_word("2:",x,y,color,no_bg); draw_palette(get_palette(game_id, 0), color, x+14, y); y+= 11;
+    print_word("3:",x,y,color,no_bg); draw_palette(get_palette(1, 1), color, x+14, y); y+= 11;
+    print_word("4:",x,y,color,no_bg); draw_palette(get_palette(2, 1), color, x+14, y); y+= 11;
+    print_word("5:",x,y,color,no_bg); draw_palette(get_palette(ID_TETRIS, 0), color, x+14, y); y+= 11;
+    print_word("6:",x,y,color,no_bg); draw_palette(get_palette(ID_ALLEYWAY, 0), color, x+14, y); y+= 11;
+    print_word("7:",x,y,color,no_bg); draw_palette(get_palette(ID_MARIO_LAND_2, 0), color, x+14, y); y+= 11;
+    print_word("8:",x,y,color,no_bg); draw_palette(get_palette(ID_WARIO_LAND, 0), color, x+14, y); y+= 11;
+    print_word("9:",x,y,color,no_bg); draw_palette(get_palette(ID_DR_MARIO, 0), color, x+14, y); y+= 11;
+    print_word("0:",x,y,color,no_bg); draw_palette(get_palette(ID_POKEMONRED, 0), color, x+14, y); y+= 11;
 
 }
 
@@ -264,11 +264,11 @@ void print_controls(uint32_t color, uint32_t bg) {
     print_word("FILE:",x,y,color,no_bg); y+=7;
     print_word("-CTRL O:OPEN NEW GAME",x,y,color,no_bg); y+=7;
     print_word("-CTRL R:RESET",x,y,color,no_bg); y+=7;
-    print_word("-CTRL S:SAVE GAME",x,y,color,no_bg); y+=7;
+    print_word("-CTRL^S:SAVE STATE",x,y,color,no_bg); y+=7;
+    print_word("-CTRL^O:LOAD STATE",x,y,color,no_bg); y+=7;
     y+=4;
     print_word("VIDEO:",x,y,color,no_bg); y+=7;
     print_word("-F11   :FULLSCREEN",x,y,color,no_bg); y+=7;
-    print_word("-ALT  }:FULLSCREEN",x,y,color,no_bg); y+=7;
     print_word("-CTRL #:WINDOW SCALE",x,y,color,no_bg); y+=7;
     print_word("-ALT   :COLOR PALETTE",x,y,color,no_bg); y+=7;
     print_word("-CTRL F:SHOW FPS",x,y,color,no_bg); y+=7;
@@ -285,8 +285,16 @@ void print_controls(uint32_t color, uint32_t bg) {
 // main ui function
 void update_ui(Status* s){
 
-    uint32_t fg = 0xFF000000;
-    uint32_t bg = 0xD0FFFFFF;
+    uint32_t fg;
+    uint32_t bg;
+
+    if (s->ui_light_mode) {
+        fg = 0xFF000000;
+        bg = 0xD0FFFFFF;
+    } else { // dark mode
+        fg = 0xFFFFFFFF;
+        bg = 0xD0000000;
+    }
 
 	clear_ui_framebuffer();
     int y = 4;

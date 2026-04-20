@@ -48,7 +48,7 @@ Emulator supports using a Nintendo Game Boy / Game Boy Color boot ROM in the exe
 | **R** | Ctrl | Restart Game |
 | **S** | Ctrl | Save Game |
 | **S** | Ctrl + Shift | Save State |
-| **L** | Ctrl + Shift | Load State |
+| **O** | Ctrl + Shift | Load State |
 | *Video* |
 | **F11** | | Toggle Fullscreen |
 | **Enter** | Alt | Toggle Fullscreen |
@@ -104,6 +104,10 @@ Emulator supports using a Nintendo Game Boy / Game Boy Color boot ROM in the exe
 <br>
 
 # Building
+
+| Build Option | Default | Options | Platforms | Description |
+| - | - | - | - | - |
+| `VERSION` | `debug` | `debug`, `release` | Windows | Enables or disables the debug console window |
 
 ## Windows
 

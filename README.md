@@ -17,6 +17,8 @@ main.exe [options] [game]
 | - | - |
 | `-f` | Start in full-screen |
 | `-v` | Show VRAM viewer |
+| `-F` | Show FPS viewer |
+| `-s [filepath] ` | Load save state from `[filepath]` |
 
 ### BIOS
 

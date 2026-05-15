@@ -16,6 +16,7 @@ void save_game(char* file, uint8_t* eram, uint32_t ram_size);
 void load_game(char* file, uint8_t* eram, uint32_t ram_size);
 
 void save_state(char* f, Memory* m, Registers* reg);
+void load_state_from_file(char* file, Memory* m, Registers* reg);
 void load_state(char* f, Memory* m, Registers* reg);
 
 #endif

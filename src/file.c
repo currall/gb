@@ -186,20 +186,7 @@ void save_state(char* f, Memory* m, Registers* reg) {
     printf("[FILE] Saved state to file: %s\n",file);
 }
 
-void load_state(char* f, Memory* m, Registers* reg) {
-
-	const char* filter[] = {"*.state"};
-    char* state_file = save_state_name(f);
-
-    char* file = tinyfd_openFileDialog(
-        "Load emulator state",
-        state_file,
-        1,
-        filter,
-        "Save state files", 
-        0
-    );
-
+void load_state_from_file(char* file, Memory* m, Registers* reg) {
     // open file
     FILE *fp = fopen(file, "rb");
     if (fp == NULL) {
@@ -246,4 +233,22 @@ void load_state(char* f, Memory* m, Registers* reg) {
 
     fclose(fp);
     printf("[FILE] Loaded state from file: %s\n", file);
+}
+
+void load_state(char* f, Memory* m, Registers* reg) {
+
+	const char* filter[] = {"*.state"};
+    char* state_file = save_state_name(f);
+
+    char* file = tinyfd_openFileDialog(
+        "Load emulator state",
+        state_file,
+        1,
+        filter,
+        "Save state files", 
+        0
+    );
+
+    load_state_from_file(file,m,reg);
+    
 }

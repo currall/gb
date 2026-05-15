@@ -79,11 +79,14 @@ int main(int argc, char *argv[]) {
 	m.ppu = &ppu;
 
 	char* file = 0;
+	char* state_file = 0;
 	for (int arg = 1; arg < argc; arg++) {
 		if (argv[arg][0] == '-') {
 			switch (argv[arg][1]) {
-				case 'f': s.fullscreen = 1;
-				case 'v': s.show_vram_viewer = 1;
+				case 'f': s.fullscreen = 1; break;
+				case 'v': s.show_vram_viewer = 1; break;
+				case 'F': s.ui_show_fps = 1; break;
+				case 's': state_file = argv[arg+1]; arg++; break;
 			}
 		} else {
 			file = argv[arg]; // read rom from arg if possible
@@ -92,6 +95,10 @@ int main(int argc, char *argv[]) {
 	
 	// init system
 	file = gb_init(file, &reg, &m, &s, &audio);
+
+	if (state_file != 0) { // load from state if supplied
+		load_state_from_file(state_file, &m, &reg);
+	}
 	
 	// debug output
 	if (s.print_memory) {print_memory(&m); s.print_memory=0;};
